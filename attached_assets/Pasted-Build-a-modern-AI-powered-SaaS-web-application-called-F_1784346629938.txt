@@ -1,0 +1,284 @@
+Build a modern AI-powered SaaS web application called "FlowIQ".
+
+Project Purpose:
+FlowIQ is an intelligent workflow management platform that connects all company departments in one centralized system. It tracks every request from creation to completion while using AI to analyze bottlenecks, predict delays, optimize workflows, and provide executives with actionable insights.
+
+Design Requirements:
+- Premium enterprise UI similar to Linear, Notion, Stripe Dashboard, and Vercel.
+- Clean, minimal, modern interface.
+- Rounded cards.
+- Glassmorphism effects.
+- Soft shadows.
+- Professional typography.
+- Responsive for desktop, tablet, and mobile.
+- Smooth animations and page transitions.
+- Dark Mode and Light Mode.
+- High-quality charts and dashboards.
+
+Authentication:
+- Company Registration.
+- Login.
+- Forgot Password.
+- Multi-tenant architecture (each company has isolated data).
+- Roles:
+  - Super Admin
+  - Company Admin
+  - Manager
+  - Department Manager
+  - Employee
+
+Dashboard:
+Display:
+- Total Requests
+- Active Requests
+- Completed Requests
+- Delayed Requests
+- Average Completion Time
+- SLA Compliance
+- Current Bottleneck Department
+- Highest Workload Employee
+- Most Delayed Request Type
+- AI Risk Score
+- AI Prediction Accuracy
+- Weekly Performance
+- Monthly Trends
+
+Charts:
+- Workflow Timeline
+- Department Performance
+- Request Status Pie Chart
+- Heatmap showing bottlenecks
+- AI Prediction Chart
+- Workload Distribution
+- Completion Trend
+- Delay Trend
+
+Workflow Management:
+Allow company admins to create unlimited workflow templates.
+
+Example:
+Sales
+→ Legal
+→ Finance
+→ CEO Approval
+→ Operations
+
+Each workflow must support:
+- Unlimited departments
+- Conditional routing
+- Parallel approvals
+- Required documents
+- SLA time for every step
+- Automatic escalation
+- Approval/Rejection
+- Comments
+- Attachments
+- Activity history
+
+Request Management:
+Employees can:
+- Create request
+- Upload documents
+- Track request progress
+- View timeline
+- Add comments
+
+Each request shows:
+- Current department
+- Assigned employee
+- Waiting time
+- Remaining SLA
+- Progress percentage
+- Full approval timeline
+
+When a department finishes:
+Click:
+"Mark as Completed"
+
+The request automatically moves to the next department.
+
+Notifications:
+Real-time notifications.
+Email notifications.
+In-app notifications.
+
+Notify when:
+- New request assigned
+- SLA approaching
+- SLA exceeded
+- Request completed
+- Request rejected
+- AI detects abnormal delay
+
+Escalation:
+After 48 hours:
+Send warning.
+
+After 7 days:
+Automatically escalate to management.
+
+AI Features:
+
+1. AI Delay Prediction
+Predict:
+- Estimated completion date
+- Probability of delay
+- Estimated remaining days
+
+Example:
+Delay Probability: 83%
+Expected Completion: 4 Days
+
+2. AI Bottleneck Detection
+Automatically identify:
+- Departments causing delays
+- Employees with overload
+- Most delayed workflow
+- Peak workload times
+
+3. AI Root Cause Analysis
+Analyze why requests are delayed.
+
+Examples:
+- Missing documents
+- Waiting for approval
+- High employee workload
+- Incomplete information
+- Cross-department dependency
+
+Display confidence score.
+
+4. AI Workflow Optimizer
+Analyze workflow efficiency.
+
+Suggest:
+- Remove unnecessary approval steps
+- Reorder departments
+- Merge duplicate approvals
+- Reduce completion time
+
+Display estimated improvement percentage.
+
+5. AI Smart Prioritization
+Automatically prioritize requests based on:
+- Due date
+- Client importance
+- Business impact
+- Delay risk
+- Request type
+
+6. AI Auto Classification
+Read request description using AI.
+
+Automatically determine:
+- Request category
+- Priority
+- Required departments
+- Expected completion time
+
+7. AI Document Validation
+Analyze uploaded documents.
+
+Detect:
+- Missing signatures
+- Missing attachments
+- Incorrect formats
+- Incomplete forms
+
+Provide suggestions before submission.
+
+8. AI Executive Assistant
+Create a built-in AI chatbot.
+
+Managers can ask:
+"Why is Request #102 delayed?"
+
+"What department is causing the most delays?"
+
+"Show this week's performance."
+
+The AI answers using system data.
+
+9. AI Weekly Executive Summary
+Automatically generate executive reports.
+
+Include:
+- Best performing department
+- Slowest department
+- Number of completed requests
+- Number of delayed requests
+- Main delay causes
+- Performance trends
+- AI recommendations
+
+10. AI What-if Simulation
+Allow managers to simulate improvements.
+
+Example:
+"What happens if Finance gets two additional employees?"
+
+AI estimates:
+- Reduced completion time
+- Reduced bottlenecks
+- Increased SLA compliance
+
+Analytics:
+Provide:
+- Department scorecards
+- Employee performance
+- Request aging
+- Average processing time
+- SLA reports
+- Monthly reports
+- Weekly reports
+- Export PDF
+- Export Excel
+
+Search & Filters:
+Global search.
+
+Filter by:
+- Department
+- Employee
+- Request Type
+- Status
+- Date
+- Priority
+- Delay Risk
+
+Request Timeline:
+Beautiful visual timeline showing:
+Created
+↓
+Sales
+↓
+Legal
+↓
+Finance
+↓
+Management
+↓
+Operations
+↓
+Completed
+
+Admin Panel:
+Manage:
+- Companies
+- Departments
+- Employees
+- Roles
+- Workflow Templates
+- Permissions
+- AI Settings
+- Notification Rules
+
+Technology:
+Use React + TypeScript + Tailwind CSS.
+Create reusable components.
+Professional folder structure.
+Use Supabase for Authentication and Database.
+Use modern charts.
+Prepare the project for production deployment.
+
+The final result should look like an enterprise-grade AI platform used by large corporations, with exceptional UX, polished UI, fast performance, and advanced AI capabilities that make FlowIQ far more than a simple workflow system.

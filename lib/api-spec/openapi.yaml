@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: FlowIQ - AI-powered workflow management platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: companies
+    description: Company management
+  - name: departments
+    description: Department management
+  - name: users
+    description: User/employee management
+  - name: workflows
+    description: Workflow template management
+  - name: requests
+    description: Request management
+  - name: comments
+    description: Comment management
+  - name: notifications
+    description: Notification management
+  - name: analytics
+    description: Analytics and reporting
+  - name: ai
+    description: AI features and insights
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +42,1787 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── COMPANIES ───────────────────────────────────────────────────────────────
+  /companies:
+    get:
+      operationId: listCompanies
+      tags: [companies]
+      summary: List all companies (super admin only)
+      responses:
+        "200":
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
+    post:
+      operationId: createCompany
+      tags: [companies]
+      summary: Register a new company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  /companies/{companyId}:
+    get:
+      operationId: getCompany
+      tags: [companies]
+      summary: Get company details
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+    patch:
+      operationId: updateCompany
+      tags: [companies]
+      summary: Update company details
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  # ─── DEPARTMENTS ─────────────────────────────────────────────────────────────
+  /departments:
+    get:
+      operationId: listDepartments
+      tags: [departments]
+      summary: List departments for current company
+      responses:
+        "200":
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Department"
+    post:
+      operationId: createDepartment
+      tags: [departments]
+      summary: Create a new department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+
+  /departments/{departmentId}:
+    get:
+      operationId: getDepartment
+      tags: [departments]
+      summary: Get department details
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Department
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+    patch:
+      operationId: updateDepartment
+      tags: [departments]
+      summary: Update department
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+    delete:
+      operationId: deleteDepartment
+      tags: [departments]
+      summary: Delete department
+      parameters:
+        - name: departmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── USERS ───────────────────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List users in current company
+      parameters:
+        - name: departmentId
+          in: query
+          schema:
+            type: integer
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create/invite a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me:
+    get:
+      operationId: getCurrentUser
+      tags: [users]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── WORKFLOW TEMPLATES ───────────────────────────────────────────────────────
+  /workflows:
+    get:
+      operationId: listWorkflows
+      tags: [workflows]
+      summary: List workflow templates
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workflow templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workflow"
+    post:
+      operationId: createWorkflow
+      tags: [workflows]
+      summary: Create a workflow template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+
+  /workflows/{workflowId}:
+    get:
+      operationId: getWorkflow
+      tags: [workflows]
+      summary: Get workflow template
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workflow
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    patch:
+      operationId: updateWorkflow
+      tags: [workflows]
+      summary: Update workflow template
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+    delete:
+      operationId: deleteWorkflow
+      tags: [workflows]
+      summary: Delete workflow template
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── REQUESTS ────────────────────────────────────────────────────────────────
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: List requests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: departmentId
+          in: query
+          schema:
+            type: integer
+        - name: assigneeId
+          in: query
+          schema:
+            type: integer
+        - name: priority
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+        - name: delayRisk
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Request"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Create a new request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+
+  /requests/{requestId}:
+    get:
+      operationId: getRequest
+      tags: [requests]
+      summary: Get request details with timeline
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestDetail"
+    patch:
+      operationId: updateRequest
+      tags: [requests]
+      summary: Update request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+
+  /requests/{requestId}/advance:
+    post:
+      operationId: advanceRequest
+      tags: [requests]
+      summary: Mark current step as completed and advance to next
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdvanceRequestInput"
+      responses:
+        "200":
+          description: Advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+
+  /requests/{requestId}/reject:
+    post:
+      operationId: rejectRequest
+      tags: [requests]
+      summary: Reject the current request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequestInput"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+
+  # ─── COMMENTS ────────────────────────────────────────────────────────────────
+  /requests/{requestId}/comments:
+    get:
+      operationId: listComments
+      tags: [comments]
+      summary: List comments on a request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createComment
+      tags: [comments]
+      summary: Add comment to a request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  # ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - name: unread
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # ─── ANALYTICS ──────────────────────────────────────────────────────────────
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [analytics]
+      summary: Get dashboard KPI stats and chart data
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /analytics/department-performance:
+    get:
+      operationId: getDepartmentPerformance
+      tags: [analytics]
+      summary: Get department performance scorecards
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter]
+      responses:
+        "200":
+          description: Department performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepartmentPerformance"
+
+  /analytics/request-trends:
+    get:
+      operationId: getRequestTrends
+      tags: [analytics]
+      summary: Get request trends over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter]
+      responses:
+        "200":
+          description: Request trends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendDataPoint"
+
+  /analytics/employee-performance:
+    get:
+      operationId: getEmployeePerformance
+      tags: [analytics]
+      summary: Get employee performance metrics
+      responses:
+        "200":
+          description: Employee performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployeePerformance"
+
+  # ─── AI FEATURES ──────────────────────────────────────────────────────────────
+  /ai/insights:
+    get:
+      operationId: getAiInsights
+      tags: [ai]
+      summary: Get AI-generated insights and bottleneck analysis
+      responses:
+        "200":
+          description: AI insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsights"
+
+  /ai/predict/{requestId}:
+    get:
+      operationId: predictRequestDelay
+      tags: [ai]
+      summary: Predict delay probability for a request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delay prediction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DelayPrediction"
+
+  /ai/chat:
+    post:
+      operationId: chatWithAi
+      tags: [ai]
+      summary: Chat with the AI executive assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatInput"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiChatResponse"
+
+  /ai/weekly-summary:
+    get:
+      operationId: getWeeklySummary
+      tags: [ai]
+      summary: Get AI-generated weekly executive summary
+      responses:
+        "200":
+          description: Weekly summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklySummary"
+
+  /ai/optimize/{workflowId}:
+    get:
+      operationId: optimizeWorkflow
+      tags: [ai]
+      summary: Get AI workflow optimization suggestions
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Optimization suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowOptimization"
+
+  /ai/simulate:
+    post:
+      operationId: runWhatIfSimulation
+      tags: [ai]
+      summary: Run AI what-if simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulationInput"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulationResult"
+
+  /ai/classify:
+    post:
+      operationId: classifyRequest
+      tags: [ai]
+      summary: AI auto-classify a request description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassifyInput"
+      responses:
+        "200":
+          description: Classification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassifyResult"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    SuccessResponse:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    # ─── COMPANY ───────────────────────────────────────────────────────────────
+    Company:
+      type: object
+      required: [id, name, slug, plan, employeeCount, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        logo:
+          type: ["string", "null"]
+        industry:
+          type: ["string", "null"]
+        plan:
+          type: string
+          enum: [starter, growth, enterprise]
+        employeeCount:
+          type: integer
+        createdAt:
+          type: string
+
+    CompanyInput:
+      type: object
+      required: [name, slug, adminEmail, adminName]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        industry:
+          type: string
+        adminEmail:
+          type: string
+        adminName:
+          type: string
+        logo:
+          type: string
+
+    CompanyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        logo:
+          type: string
+        plan:
+          type: string
+
+    # ─── DEPARTMENT ─────────────────────────────────────────────────────────────
+    Department:
+      type: object
+      required: [id, companyId, name, memberCount, avgCompletionHours, slaComplianceRate]
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        memberCount:
+          type: integer
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        activeRequests:
+          type: integer
+        color:
+          type: ["string", "null"]
+
+    DepartmentInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        managerId:
+          type: integer
+        color:
+          type: string
+
+    DepartmentUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        managerId:
+          type: integer
+        color:
+          type: string
+
+    # ─── USER ───────────────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, companyId, email, name, role, status, createdAt]
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        clerkUserId:
+          type: ["string", "null"]
+        email:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [super_admin, company_admin, manager, department_manager, employee]
+        departmentId:
+          type: ["integer", "null"]
+        departmentName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive, pending]
+        activeRequests:
+          type: integer
+        createdAt:
+          type: string
+
+    UserInput:
+      type: object
+      required: [email, name, role]
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+        departmentId:
+          type: integer
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        departmentId:
+          type: integer
+        status:
+          type: string
+
+    # ─── WORKFLOW ────────────────────────────────────────────────────────────────
+    Workflow:
+      type: object
+      required: [id, companyId, name, stepsCount, activeRequestsCount, avgCompletionHours, createdAt]
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowStep"
+        stepsCount:
+          type: integer
+        activeRequestsCount:
+          type: integer
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        createdAt:
+          type: string
+        isActive:
+          type: boolean
+
+    WorkflowStep:
+      type: object
+      required: [id, order, departmentId, departmentName, slaHours, isParallel, isRequired]
+      properties:
+        id:
+          type: integer
+        order:
+          type: integer
+        departmentId:
+          type: integer
+        departmentName:
+          type: string
+        assigneeId:
+          type: ["integer", "null"]
+        assigneeName:
+          type: ["string", "null"]
+        slaHours:
+          type: integer
+        isParallel:
+          type: boolean
+        isRequired:
+          type: boolean
+        requiredDocuments:
+          type: array
+          items:
+            type: string
+        escalationHours:
+          type: integer
+        condition:
+          type: ["string", "null"]
+
+    WorkflowInput:
+      type: object
+      required: [name, steps]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowStepInput"
+
+    WorkflowStepInput:
+      type: object
+      required: [order, departmentId, slaHours]
+      properties:
+        order:
+          type: integer
+        departmentId:
+          type: integer
+        assigneeId:
+          type: integer
+        slaHours:
+          type: integer
+        isParallel:
+          type: boolean
+        isRequired:
+          type: boolean
+        requiredDocuments:
+          type: array
+          items:
+            type: string
+        escalationHours:
+          type: integer
+        condition:
+          type: string
+
+    WorkflowUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkflowStepInput"
+
+    # ─── REQUEST ─────────────────────────────────────────────────────────────────
+    Request:
+      type: object
+      required: [id, companyId, title, status, priority, progressPercent, createdAt]
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        workflowId:
+          type: ["integer", "null"]
+        workflowName:
+          type: ["string", "null"]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, active, completed, rejected, escalated]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        progressPercent:
+          type: integer
+        currentDepartmentId:
+          type: ["integer", "null"]
+        currentDepartmentName:
+          type: ["string", "null"]
+        currentAssigneeId:
+          type: ["integer", "null"]
+        currentAssigneeName:
+          type: ["string", "null"]
+        creatorId:
+          type: integer
+        creatorName:
+          type: string
+        waitingHours:
+          type: number
+        remainingSlaHours:
+          type: ["number", "null"]
+        delayRisk:
+          type: string
+          enum: [low, medium, high, critical]
+        aiRiskScore:
+          type: ["number", "null"]
+        estimatedCompletionDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+
+    RequestDetail:
+      type: object
+      required: [id, companyId, title, status, priority, progressPercent, createdAt, timeline, comments]
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        workflowId:
+          type: ["integer", "null"]
+        workflowName:
+          type: ["string", "null"]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        status:
+          type: string
+        priority:
+          type: string
+        progressPercent:
+          type: integer
+        currentDepartmentId:
+          type: ["integer", "null"]
+        currentDepartmentName:
+          type: ["string", "null"]
+        currentAssigneeId:
+          type: ["integer", "null"]
+        currentAssigneeName:
+          type: ["string", "null"]
+        creatorId:
+          type: integer
+        creatorName:
+          type: string
+        waitingHours:
+          type: number
+        remainingSlaHours:
+          type: ["number", "null"]
+        delayRisk:
+          type: string
+        aiRiskScore:
+          type: ["number", "null"]
+        estimatedCompletionDate:
+          type: ["string", "null"]
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineEvent"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        aiPrediction:
+          $ref: "#/components/schemas/DelayPrediction"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+
+    RequestInput:
+      type: object
+      required: [title, workflowId]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        workflowId:
+          type: integer
+        priority:
+          type: string
+        category:
+          type: string
+
+    RequestUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+        assigneeId:
+          type: integer
+
+    AdvanceRequestInput:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: string
+
+    RejectRequestInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    TimelineEvent:
+      type: object
+      required: [id, requestId, eventType, description, createdAt]
+      properties:
+        id:
+          type: integer
+        requestId:
+          type: integer
+        eventType:
+          type: string
+          enum: [created, assigned, advanced, rejected, completed, commented, escalated, document_added]
+        description:
+          type: string
+        departmentId:
+          type: ["integer", "null"]
+        departmentName:
+          type: ["string", "null"]
+        userId:
+          type: ["integer", "null"]
+        userName:
+          type: ["string", "null"]
+        metadata:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    Attachment:
+      type: object
+      required: [id, requestId, fileName, fileSize, fileType, uploadedAt]
+      properties:
+        id:
+          type: integer
+        requestId:
+          type: integer
+        fileName:
+          type: string
+        fileSize:
+          type: integer
+        fileType:
+          type: string
+        url:
+          type: string
+        uploadedById:
+          type: integer
+        uploadedByName:
+          type: string
+        uploadedAt:
+          type: string
+
+    # ─── COMMENT ─────────────────────────────────────────────────────────────────
+    Comment:
+      type: object
+      required: [id, requestId, content, authorId, authorName, createdAt]
+      properties:
+        id:
+          type: integer
+        requestId:
+          type: integer
+        content:
+          type: string
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        authorAvatar:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    # ─── NOTIFICATION ─────────────────────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, type, title, message, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [assigned, sla_warning, sla_exceeded, completed, rejected, escalated, ai_alert]
+        title:
+          type: string
+        message:
+          type: string
+        requestId:
+          type: ["integer", "null"]
+        requestTitle:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+
+    # ─── ANALYTICS ───────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalRequests, activeRequests, completedRequests, delayedRequests,
+                 avgCompletionHours, slaComplianceRate, aiRiskScore, aiPredictionAccuracy,
+                 currentBottleneckDepartment, highestWorkloadEmployee, mostDelayedRequestType,
+                 weeklyPerformance, monthlyTrend, requestStatusBreakdown,
+                 workloadDistribution, completionTrend, delayTrend]
+      properties:
+        totalRequests:
+          type: integer
+        activeRequests:
+          type: integer
+        completedRequests:
+          type: integer
+        delayedRequests:
+          type: integer
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        aiRiskScore:
+          type: number
+        aiPredictionAccuracy:
+          type: number
+        currentBottleneckDepartment:
+          type: string
+        highestWorkloadEmployee:
+          type: string
+        mostDelayedRequestType:
+          type: string
+        weeklyPerformance:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+        monthlyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+        requestStatusBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/PieDataPoint"
+        workloadDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+        completionTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+        delayTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+        bottleneckHeatmap:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeatmapCell"
+
+    ChartDataPoint:
+      type: object
+      required: [label, value]
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+        secondary:
+          type: ["number", "null"]
+
+    PieDataPoint:
+      type: object
+      required: [name, value, color]
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        color:
+          type: string
+
+    HeatmapCell:
+      type: object
+      required: [department, hour, value]
+      properties:
+        department:
+          type: string
+        hour:
+          type: integer
+        value:
+          type: number
+
+    DepartmentPerformance:
+      type: object
+      required: [departmentId, departmentName, completedRequests, avgCompletionHours,
+                 slaComplianceRate, delayedRequests, score]
+      properties:
+        departmentId:
+          type: integer
+        departmentName:
+          type: string
+        completedRequests:
+          type: integer
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        delayedRequests:
+          type: integer
+        score:
+          type: number
+        trend:
+          type: string
+          enum: [up, down, stable]
+
+    TrendDataPoint:
+      type: object
+      required: [date, completed, delayed, created]
+      properties:
+        date:
+          type: string
+        completed:
+          type: integer
+        delayed:
+          type: integer
+        created:
+          type: integer
+
+    EmployeePerformance:
+      type: object
+      required: [userId, userName, departmentName, completedRequests, avgCompletionHours,
+                 slaComplianceRate, activeRequests]
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        userAvatar:
+          type: ["string", "null"]
+        departmentName:
+          type: string
+        completedRequests:
+          type: integer
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        activeRequests:
+          type: integer
+        score:
+          type: number
+
+    # ─── AI ──────────────────────────────────────────────────────────────────────
+    AiInsights:
+      type: object
+      required: [bottlenecks, overloadedEmployees, riskScore, topRecommendations, rootCauses]
+      properties:
+        riskScore:
+          type: number
+        bottlenecks:
+          type: array
+          items:
+            $ref: "#/components/schemas/BottleneckItem"
+        overloadedEmployees:
+          type: array
+          items:
+            $ref: "#/components/schemas/OverloadedEmployee"
+        rootCauses:
+          type: array
+          items:
+            $ref: "#/components/schemas/RootCause"
+        topRecommendations:
+          type: array
+          items:
+            type: string
+        peakWorkloadTimes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChartDataPoint"
+
+    BottleneckItem:
+      type: object
+      required: [departmentId, departmentName, avgWaitHours, affectedRequests, severity]
+      properties:
+        departmentId:
+          type: integer
+        departmentName:
+          type: string
+        avgWaitHours:
+          type: number
+        affectedRequests:
+          type: integer
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        confidenceScore:
+          type: number
+
+    OverloadedEmployee:
+      type: object
+      required: [userId, userName, departmentName, activeRequests, capacityUsed]
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        departmentName:
+          type: string
+        activeRequests:
+          type: integer
+        capacityUsed:
+          type: number
+
+    RootCause:
+      type: object
+      required: [cause, occurrences, confidenceScore]
+      properties:
+        cause:
+          type: string
+        occurrences:
+          type: integer
+        confidenceScore:
+          type: number
+        affectedRequests:
+          type: integer
+
+    DelayPrediction:
+      type: object
+      required: [requestId, delayProbability, estimatedCompletionDate,
+                 estimatedRemainingDays, confidenceScore]
+      properties:
+        requestId:
+          type: integer
+        delayProbability:
+          type: number
+        estimatedCompletionDate:
+          type: string
+        estimatedRemainingDays:
+          type: number
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        confidenceScore:
+          type: number
+        factors:
+          type: array
+          items:
+            type: string
+
+    AiChatInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        conversationId:
+          type: string
+
+    AiChatResponse:
+      type: object
+      required: [message, conversationId]
+      properties:
+        message:
+          type: string
+        conversationId:
+          type: string
+        relatedRequestIds:
+          type: array
+          items:
+            type: integer
+        dataReferences:
+          type: array
+          items:
+            type: string
+
+    WeeklySummary:
+      type: object
+      required: [periodStart, periodEnd, bestDepartment, slowestDepartment,
+                 completedRequests, delayedRequests, mainDelayCauses,
+                 performanceTrend, recommendations]
+      properties:
+        periodStart:
+          type: string
+        periodEnd:
+          type: string
+        bestDepartment:
+          type: string
+        slowestDepartment:
+          type: string
+        completedRequests:
+          type: integer
+        delayedRequests:
+          type: integer
+        mainDelayCauses:
+          type: array
+          items:
+            type: string
+        performanceTrend:
+          type: string
+          enum: [improving, declining, stable]
+        recommendations:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+
+    WorkflowOptimization:
+      type: object
+      required: [workflowId, currentAvgHours, optimizedAvgHours, improvementPercent, suggestions]
+      properties:
+        workflowId:
+          type: integer
+        currentAvgHours:
+          type: number
+        optimizedAvgHours:
+          type: number
+        improvementPercent:
+          type: number
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizationSuggestion"
+
+    OptimizationSuggestion:
+      type: object
+      required: [type, description, estimatedImprovementPercent, confidence]
+      properties:
+        type:
+          type: string
+          enum: [remove_step, reorder_steps, merge_approvals, add_resources, change_assignee]
+        description:
+          type: string
+        estimatedImprovementPercent:
+          type: number
+        confidence:
+          type: number
+
+    SimulationInput:
+      type: object
+      required: [scenario]
+      properties:
+        scenario:
+          type: string
+        departmentId:
+          type: integer
+        additionalEmployees:
+          type: integer
+        workflowId:
+          type: integer
+
+    SimulationResult:
+      type: object
+      required: [scenario, currentMetrics, simulatedMetrics, improvements]
+      properties:
+        scenario:
+          type: string
+        currentMetrics:
+          $ref: "#/components/schemas/MetricsSnapshot"
+        simulatedMetrics:
+          $ref: "#/components/schemas/MetricsSnapshot"
+        improvements:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImprovementItem"
+
+    MetricsSnapshot:
+      type: object
+      required: [avgCompletionHours, slaComplianceRate, bottleneckCount]
+      properties:
+        avgCompletionHours:
+          type: number
+        slaComplianceRate:
+          type: number
+        bottleneckCount:
+          type: integer
+        delayedRequestsPercent:
+          type: number
+
+    ImprovementItem:
+      type: object
+      required: [metric, currentValue, simulatedValue, changePercent]
+      properties:
+        metric:
+          type: string
+        currentValue:
+          type: number
+        simulatedValue:
+          type: number
+        changePercent:
+          type: number
+
+    ClassifyInput:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+        title:
+          type: string
+
+    ClassifyResult:
+      type: object
+      required: [category, priority, expectedCompletionHours, confidence]
+      properties:
+        category:
+          type: string
+        priority:
+          type: string
+        expectedCompletionHours:
+          type: number
+        requiredDepartments:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: number
+        suggestedWorkflowId:
+          type: ["integer", "null"]
