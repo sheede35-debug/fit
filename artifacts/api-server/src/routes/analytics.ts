@@ -39,13 +39,13 @@ router.get("/analytics/dashboard", async (req, res): Promise<void> => {
     mostDelayedRequestType: "Contract Review",
     weeklyPerformance: weeks.map((label, i) => ({
       label,
-      value: 60 + Math.floor(Math.sin(i) * 20 + Math.random() * 15),
-      secondary: 40 + Math.floor(Math.cos(i) * 15 + Math.random() * 10),
+      value: 60 + Math.floor(Math.sin(i) * 20 + 10),
+      secondary: 40 + Math.floor(Math.cos(i) * 15 + 8),
     })),
     monthlyTrend: Array.from({ length: 12 }, (_, i) => ({
       label: new Date(now.getFullYear(), i, 1).toLocaleString("default", { month: "short" }),
-      value: 45 + Math.floor(Math.random() * 30 + i * 3),
-      secondary: 20 + Math.floor(Math.random() * 15),
+      value: 45 + Math.floor(i * 3 + 15),
+      secondary: 20 + Math.floor(i * 1.5 + 8),
     })),
     requestStatusBreakdown: [
       { name: "Active", value: active || 18, color: "#4F46E5" },
@@ -56,24 +56,24 @@ router.get("/analytics/dashboard", async (req, res): Promise<void> => {
     ],
     workloadDistribution: departments.slice(0, 6).map((d, i) => ({
       label: d.name,
-      value: 3 + Math.floor(Math.random() * 8),
+      value: 3 + ((d.id * 3) % 8),
       secondary: null,
     })),
     completionTrend: Array.from({ length: 7 }, (_, i) => ({
       label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
-      value: 3 + Math.floor(Math.random() * 6),
+      value: 3 + ((i * 2) % 6),
       secondary: null,
     })),
     delayTrend: Array.from({ length: 7 }, (_, i) => ({
       label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i],
-      value: 1 + Math.floor(Math.random() * 3),
+      value: 1 + (i % 3),
       secondary: null,
     })),
     bottleneckHeatmap: departments.slice(0, 4).flatMap((d) =>
       Array.from({ length: 8 }, (_, h) => ({
         department: d.name,
         hour: 9 + h,
-        value: Math.random() * 100,
+        value: 20 + ((d.id + h) * 17 % 80),
       }))
     ),
   });
@@ -84,12 +84,13 @@ router.get("/analytics/department-performance", async (req, res): Promise<void> 
   const result = departments.map((d, i) => ({
     departmentId: d.id,
     departmentName: d.name,
-    completedRequests: 8 + Math.floor(Math.random() * 20),
-    avgCompletionHours: 24 + Math.random() * 72,
-    slaComplianceRate: 0.6 + Math.random() * 0.35,
-    delayedRequests: Math.floor(Math.random() * 5),
-    score: 55 + Math.floor(Math.random() * 40),
-    trend: (["up", "down", "stable"] as const)[Math.floor(Math.random() * 3)],
+    completedRequests: 8 + ((d.id * 7) % 20),
+    avgCompletionHours: Math.round(24 + ((d.id * 13) % 72)),
+    slaComplianceRate: Math.round((0.6 + ((d.id * 0.07) % 0.35)) * 100) / 100,
+    slaCompliance: Math.round(60 + ((d.id * 7) % 35)),
+    delayedRequests: (d.id * 3) % 5,
+    score: 55 + ((d.id * 11) % 40),
+    trend: (["up", "down", "stable"] as const)[(d.id) % 3],
   }));
   res.json(result);
 });
@@ -100,9 +101,9 @@ router.get("/analytics/request-trends", async (req, res): Promise<void> => {
     d.setDate(d.getDate() - (29 - i));
     return {
       date: d.toISOString().split("T")[0],
-      completed: 1 + Math.floor(Math.random() * 5),
-      delayed: Math.floor(Math.random() * 3),
-      created: 2 + Math.floor(Math.random() * 6),
+      completed: 1 + (i % 5),
+      delayed: i % 3,
+      created: 2 + (i % 6),
     };
   });
   res.json(result);
@@ -118,12 +119,39 @@ router.get("/analytics/employee-performance", async (req, res): Promise<void> =>
     userName: u.name,
     userAvatar: u.avatar ?? null,
     departmentName: u.departmentId ? deptMap[u.departmentId] ?? "Unknown" : "Unknown",
-    completedRequests: 5 + Math.floor(Math.random() * 20),
-    avgCompletionHours: 24 + Math.random() * 48,
-    slaComplianceRate: 0.65 + Math.random() * 0.30,
-    activeRequests: Math.floor(Math.random() * 8),
-    score: 50 + Math.floor(Math.random() * 45),
+    completedRequests: 5 + ((u.id * 7) % 20),
+    avgCompletionHours: Math.round(24 + ((u.id * 11) % 48)),
+    slaComplianceRate: Math.round((0.65 + ((u.id * 0.05) % 0.30)) * 100) / 100,
+    slaCompliance: Math.round(65 + ((u.id * 5) % 30)),
+    activeRequests: (u.id * 3) % 8,
+    score: 50 + ((u.id * 9) % 45),
+    trend: (["up", "down", "stable"] as const)[u.id % 3],
   }));
+  res.json(result);
+});
+
+router.get("/analytics/workload", async (req, res): Promise<void> => {
+  const departments = await db.select().from(departmentsTable).where(eq(departmentsTable.companyId, DEFAULT_COMPANY_ID));
+  const requests = await db.select().from(requestsTable).where(eq(requestsTable.companyId, DEFAULT_COMPANY_ID));
+
+  const result = departments.map((d) => {
+    const activeCount = requests.filter((r) => r.currentDepartmentId === d.id && (r.status === "active" || r.status === "pending")).length;
+    const capacity = 5; // max healthy active requests per department
+    const capacityUsed = Math.min(1.5, activeCount / capacity);
+    const overloaded = capacityUsed > 1.0;
+
+    return {
+      departmentId: d.id,
+      departmentName: d.name,
+      activeRequests: activeCount,
+      capacity,
+      capacityUsed: Math.round(capacityUsed * 100) / 100,
+      capacityPercent: Math.min(150, Math.round(capacityUsed * 100)),
+      overloaded,
+      status: overloaded ? "overloaded" : capacityUsed > 0.7 ? "busy" : "healthy",
+    };
+  });
+
   res.json(result);
 });
 

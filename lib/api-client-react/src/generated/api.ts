@@ -24,6 +24,7 @@ import type {
   AiChatInput,
   AiChatResponse,
   AiInsights,
+  AiReport,
   ClassifyInput,
   ClassifyResult,
   Comment,
@@ -37,7 +38,9 @@ import type {
   DepartmentInput,
   DepartmentPerformance,
   DepartmentUpdate,
+  DeptWorkload,
   EmployeePerformance,
+  GetAiReportParams,
   GetDepartmentPerformanceParams,
   GetRequestTrendsParams,
   HealthStatus,
@@ -50,6 +53,7 @@ import type {
   Request,
   RequestDetail,
   RequestInput,
+  RequestJourney,
   RequestUpdate,
   SimulationInput,
   SimulationResult,
@@ -3255,4 +3259,242 @@ export const useClassifyRequest = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getClassifyRequestMutationOptions(options));
     }
+
+export const getGetRequestJourneyUrl = (requestId: number,) => {
+
+
+
+
+  return `/api/ai/journey/${requestId}`
+}
+
+/**
+ * @summary Analyze request journey stages with bottleneck detection
+ */
+export const getRequestJourney = async (requestId: number, options?: RequestInit): Promise<RequestJourney> => {
+
+  return customFetch<RequestJourney>(getGetRequestJourneyUrl(requestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRequestJourneyQueryKey = (requestId: number,) => {
+    return [
+    `/api/ai/journey/${requestId}`
+    ] as const;
+    }
+
+
+export const getGetRequestJourneyQueryOptions = <TData = Awaited<ReturnType<typeof getRequestJourney>>, TError = ErrorType<void>>(requestId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRequestJourney>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRequestJourneyQueryKey(requestId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRequestJourney>>> = ({ signal }) => getRequestJourney(requestId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: requestId !== null && requestId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRequestJourney>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRequestJourneyQueryResult = NonNullable<Awaited<ReturnType<typeof getRequestJourney>>>
+export type GetRequestJourneyQueryError = ErrorType<void>
+
+
+/**
+ * @summary Analyze request journey stages with bottleneck detection
+ */
+
+export function useGetRequestJourney<TData = Awaited<ReturnType<typeof getRequestJourney>>, TError = ErrorType<void>>(
+ requestId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRequestJourney>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRequestJourneyQueryOptions(requestId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAiReportUrl = (params?: GetAiReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/ai/reports?${stringifiedParams}` : `/api/ai/reports`
+}
+
+/**
+ * @summary Generate AI weekly or monthly operational report
+ */
+export const getAiReport = async (params?: GetAiReportParams, options?: RequestInit): Promise<AiReport> => {
+
+  return customFetch<AiReport>(getGetAiReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAiReportQueryKey = (params?: GetAiReportParams,) => {
+    return [
+    `/api/ai/reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAiReportQueryOptions = <TData = Awaited<ReturnType<typeof getAiReport>>, TError = ErrorType<unknown>>(params?: GetAiReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAiReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAiReport>>> = ({ signal }) => getAiReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAiReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAiReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAiReport>>>
+export type GetAiReportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Generate AI weekly or monthly operational report
+ */
+
+export function useGetAiReport<TData = Awaited<ReturnType<typeof getAiReport>>, TError = ErrorType<unknown>>(
+ params?: GetAiReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAiReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAiReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetWorkloadStatsUrl = () => {
+
+
+
+
+  return `/api/analytics/workload`
+}
+
+/**
+ * @summary Get per-department active workload and capacity
+ */
+export const getWorkloadStats = async ( options?: RequestInit): Promise<DeptWorkload[]> => {
+
+  return customFetch<DeptWorkload[]>(getGetWorkloadStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWorkloadStatsQueryKey = () => {
+    return [
+    `/api/analytics/workload`
+    ] as const;
+    }
+
+
+export const getGetWorkloadStatsQueryOptions = <TData = Awaited<ReturnType<typeof getWorkloadStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkloadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWorkloadStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWorkloadStats>>> = ({ signal }) => getWorkloadStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWorkloadStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWorkloadStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getWorkloadStats>>>
+export type GetWorkloadStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get per-department active workload and capacity
+ */
+
+export function useGetWorkloadStats<TData = Awaited<ReturnType<typeof getWorkloadStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWorkloadStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWorkloadStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

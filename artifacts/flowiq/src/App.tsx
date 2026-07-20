@@ -23,6 +23,7 @@ import NewWorkflow from '@/pages/NewWorkflow';
 import WorkflowDetail from '@/pages/WorkflowDetail';
 import Analytics from '@/pages/Analytics';
 import AiHub from '@/pages/AiHub';
+import Reports from '@/pages/Reports';
 import Notifications from '@/pages/Notifications';
 import Admin from '@/pages/Admin';
 
@@ -139,6 +140,7 @@ function DemoRoutes() {
         <Route path="/workflows"><AppLayout><Workflows /></AppLayout></Route>
         <Route path="/analytics"><AppLayout><Analytics /></AppLayout></Route>
         <Route path="/ai"><AppLayout><AiHub /></AppLayout></Route>
+        <Route path="/reports"><AppLayout><Reports /></AppLayout></Route>
         <Route path="/notifications"><AppLayout><Notifications /></AppLayout></Route>
         <Route path="/admin"><AppLayout><Admin /></AppLayout></Route>
         <Route component={NotFound} />
@@ -201,6 +203,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/workflows"><ProtectedRoute component={Workflows} /></Route>
           <Route path="/analytics"><ProtectedRoute component={Analytics} /></Route>
           <Route path="/ai"><ProtectedRoute component={AiHub} /></Route>
+          <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
           <Route path="/notifications"><ProtectedRoute component={Notifications} /></Route>
           <Route path="/admin"><ProtectedRoute component={Admin} /></Route>
           <Route component={NotFound} />

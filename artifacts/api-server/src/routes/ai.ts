@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import { db, requestsTable, departmentsTable, usersTable } from "@workspace/db";
+import { db, requestsTable, departmentsTable, usersTable, timelineEventsTable, workflowStepsTable } from "@workspace/db";
 import {
   PredictRequestDelayParams,
   OptimizeWorkflowParams,
@@ -12,6 +12,8 @@ import {
   computeDelayPrediction,
   computeAiInsights,
   generateWeeklySummary,
+  generateMonthlyReport,
+  analyzeRequestJourney,
   simulateWhatIf,
   classifyRequest,
   generateAiChatResponse,
@@ -68,8 +70,68 @@ router.get("/ai/weekly-summary", async (req, res): Promise<void> => {
   const stats = {
     completedRequests: requests.filter(r => r.status === "completed").length,
     delayedRequests: requests.filter(r => r.delayRisk === "high" || r.delayRisk === "critical").length,
+    newRequests: requests.filter(r => r.status === "active" || r.status === "pending").length,
   };
   res.json(generateWeeklySummary(stats));
+});
+
+router.get("/ai/reports", async (req, res): Promise<void> => {
+  const period = (req.query.period as string) || "weekly";
+  const requests = await db.select().from(requestsTable).where(eq(requestsTable.companyId, DEFAULT_COMPANY_ID));
+  const departments = await db.select().from(departmentsTable).where(eq(departmentsTable.companyId, DEFAULT_COMPANY_ID));
+
+  if (period === "monthly") {
+    res.json(generateMonthlyReport(requests, departments));
+  } else {
+    const stats = {
+      completedRequests: requests.filter(r => r.status === "completed").length,
+      delayedRequests: requests.filter(r => r.delayRisk === "high" || r.delayRisk === "critical").length,
+      newRequests: requests.filter(r => r.status === "active" || r.status === "pending").length,
+    };
+    res.json(generateWeeklySummary(stats));
+  }
+});
+
+router.get("/ai/journey/:requestId", async (req, res): Promise<void> => {
+  const requestId = parseInt(req.params.requestId, 10);
+  if (isNaN(requestId)) {
+    res.status(400).json({ error: "Invalid request ID" });
+    return;
+  }
+
+  const [request] = await db.select().from(requestsTable).where(eq(requestsTable.id, requestId));
+  if (!request) {
+    res.status(404).json({ error: "Request not found" });
+    return;
+  }
+
+  const timelineEvents = await db.select().from(timelineEventsTable)
+    .where(eq(timelineEventsTable.requestId, requestId))
+    .orderBy(timelineEventsTable.createdAt);
+
+  // Enrich timeline with department names and user names
+  const enrichedTimeline = await Promise.all(timelineEvents.map(async (t) => {
+    let deptName: string | null = null;
+    let userName: string | null = null;
+    if (t.departmentId) {
+      const [dept] = await db.select().from(departmentsTable).where(eq(departmentsTable.id, t.departmentId));
+      deptName = dept?.name ?? null;
+    }
+    if (t.userId) {
+      const [user] = await db.select().from(usersTable).where(eq(usersTable.id, t.userId));
+      userName = user?.name ?? null;
+    }
+    return { ...t, departmentName: deptName, userName, createdAt: t.createdAt.toISOString() };
+  }));
+
+  let workflowSteps: any[] = [];
+  if (request.workflowId) {
+    workflowSteps = await db.select().from(workflowStepsTable)
+      .where(eq(workflowStepsTable.workflowId, request.workflowId))
+      .orderBy(workflowStepsTable.order);
+  }
+
+  res.json(analyzeRequestJourney(request, enrichedTimeline, workflowSteps));
 });
 
 router.get("/ai/optimize/:workflowId", async (req, res): Promise<void> => {

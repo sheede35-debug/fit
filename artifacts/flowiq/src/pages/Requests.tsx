@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Plus, Filter, AlertCircle, Clock } from "lucide-react";
+import { Search, Plus, Filter, AlertCircle, Clock, CheckCircle2, Minus } from "lucide-react";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -37,13 +37,48 @@ export default function Requests() {
     }
   };
 
-  const getDelayRiskIcon = (risk?: string) => {
-    if (!risk) return null;
+  // Risk chip: On Track / At Risk / Delayed
+  const getRiskChip = (risk?: string, status?: string) => {
+    if (status === 'completed') {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+          <CheckCircle2 className="h-3 w-3" />
+          {t('requests.risk.onTrack')}
+        </span>
+      );
+    }
+    if (status === 'rejected') {
+      return <span className="text-xs text-muted-foreground">—</span>;
+    }
     switch (risk) {
-      case 'critical': return <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />;
-      case 'high':     return <AlertCircle className="w-4 h-4 text-orange-500" />;
-      case 'medium':   return <AlertCircle className="w-4 h-4 text-amber-500" />;
-      default:         return null;
+      case 'critical':
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full px-2 py-0.5 animate-pulse">
+            <AlertCircle className="h-3 w-3" />
+            {t('requests.risk.delayed')}
+          </span>
+        );
+      case 'high':
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+            <AlertCircle className="h-3 w-3" />
+            {t('requests.risk.atRisk')}
+          </span>
+        );
+      case 'medium':
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+            <Clock className="h-3 w-3" />
+            {t('requests.risk.atRisk')}
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+            <CheckCircle2 className="h-3 w-3" />
+            {t('requests.risk.onTrack')}
+          </span>
+        );
     }
   };
 
@@ -105,7 +140,7 @@ export default function Requests() {
                     <TableHead className="hidden md:table-cell">{t('common.priority')}</TableHead>
                     <TableHead className="hidden lg:table-cell">{t('requests.currentDept')}</TableHead>
                     <TableHead className="hidden lg:table-cell">{t('requests.waitingHours')}</TableHead>
-                    <TableHead>{t('requests.delayRisk')}</TableHead>
+                    <TableHead>{t('requests.riskLevel')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -133,14 +168,7 @@ export default function Requests() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="flex items-center gap-1">
-                          {getDelayRiskIcon(req.delayRisk)}
-                          {req.delayRisk ? (
-                            <span className="text-xs hidden sm:inline">{t(`risk.${req.delayRisk}`)}</span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </span>
+                        {getRiskChip(req.delayRisk ?? undefined, req.status)}
                       </TableCell>
                     </TableRow>
                   ))}

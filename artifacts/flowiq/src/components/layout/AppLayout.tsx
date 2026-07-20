@@ -19,10 +19,12 @@ import {
   Languages,
   LogOut,
   FlaskConical,
+  FileBarChart2,
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { DEMO_MODE } from "@/App"
+import AssistantWidget from "@/components/AssistantWidget"
 
 // Demo user — shown when auth is disabled
 const DEMO_USER = {
@@ -54,6 +56,7 @@ export function Sidebar() {
     { href: "/workflows", labelKey: "nav.workflows", icon: GitBranch },
     { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3 },
     { href: "/ai", labelKey: "nav.aiHub", icon: BrainCircuit, highlight: true },
+    { href: "/reports", labelKey: "nav.reports", icon: FileBarChart2 },
     { href: "/notifications", labelKey: "nav.notifications", icon: Bell },
     { href: "/admin", labelKey: "nav.admin", icon: Settings },
   ]
@@ -224,6 +227,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+      <AssistantWidget />
     </div>
   )
 }

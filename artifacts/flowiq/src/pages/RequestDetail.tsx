@@ -5,11 +5,14 @@ import {
   usePredictRequestDelay,
   useAdvanceRequest,
   useRejectRequest,
-  useCreateComment
+  useCreateComment,
+  useGetRequestJourney,
+  getPredictRequestDelayQueryKey,
+  getGetRequestJourneyQueryKey,
 } from "@workspace/api-client-react";
 import { queryClient } from "@/lib/queryClient";
 import { getGetRequestQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -19,7 +22,8 @@ import { Input } from "@/components/ui/input";
 import {
   CheckCircle2, Clock, XCircle, ArrowRight, BrainCircuit,
   Paperclip, Send, AlertTriangle, FileText, Activity,
-  ChevronLeft
+  ChevronLeft, Route, Sparkles, Building2, User as UserIcon,
+  Circle, CircleDot,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -39,7 +43,11 @@ export default function RequestDetail() {
   });
 
   const { data: prediction } = usePredictRequestDelay(id, {
-    query: { enabled: !!id && !!req && req.status !== 'completed' && req.status !== 'rejected' }
+    query: { enabled: !!id && !!req && req.status !== 'completed' && req.status !== 'rejected', queryKey: getPredictRequestDelayQueryKey(id) }
+  });
+
+  const { data: journey } = useGetRequestJourney(id, {
+    query: { enabled: !!id && !!req, queryKey: getGetRequestJourneyQueryKey(id) }
   });
 
   const advanceMut = useAdvanceRequest();
@@ -85,6 +93,12 @@ export default function RequestDetail() {
     }
   };
 
+  const getRiskLabel = (risk?: string) => {
+    if (!risk || risk === 'low') return { label: t('requests.risk.onTrack'), color: 'text-emerald-600 bg-emerald-50 border-emerald-200' };
+    if (risk === 'medium') return { label: t('requests.risk.atRisk'), color: 'text-amber-600 bg-amber-50 border-amber-200' };
+    return { label: t('requests.risk.delayed'), color: 'text-red-600 bg-red-50 border-red-200' };
+  };
+
   if (isLoading || !req) {
     return (
       <div className="space-y-6">
@@ -102,6 +116,8 @@ export default function RequestDetail() {
       </div>
     );
   }
+
+  const riskLabel = getRiskLabel(req.delayRisk ?? undefined);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -121,6 +137,10 @@ export default function RequestDetail() {
             <span className="font-mono text-sm text-muted-foreground">REQ-{req.id.toString().padStart(4, '0')}</span>
             <Badge variant="outline">{req.workflowName || t('requests.customRequest')}</Badge>
             {getStatusBadge(req.status)}
+            {/* Risk chip inline */}
+            <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 border ${riskLabel.color}`}>
+              {riskLabel.label}
+            </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight mt-2">{req.title}</h1>
         </div>
@@ -214,18 +234,116 @@ export default function RequestDetail() {
             </CardContent>
           </Card>
 
-          {/* Timeline */}
+          {/* ── Request Journey Visualization ── */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Activity className="h-4 w-4 text-muted-foreground" />
-                {t('requests.timeline')}
+                <Route className="h-4 w-4 text-primary" />
+                {t('requests.journeyTitle')}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {req.timeline?.length === 0 ? (
+            <CardContent className="space-y-4">
+              {/* AI Journey analysis tip */}
+              {journey?.improvementTips && journey.improvementTips.length > 0 && journey.totalDelayHours > 0 && (
+                <div className="flex gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3">
+                  <Sparkles className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">{journey.improvementTips[0]}</p>
+                </div>
+              )}
+
+              {/* Journey stage stepper */}
+              {journey?.stages && journey.stages.length > 0 ? (
+                <div className="space-y-0">
+                  {journey.stages.map((stage: any, i: number) => {
+                    const isLast = i === journey.stages.length - 1;
+                    return (
+                      <div key={i} className="flex gap-3">
+                        {/* Timeline column */}
+                        <div className="flex flex-col items-center">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 border-2 z-10 ${
+                            stage.status === 'active'
+                              ? 'bg-primary border-primary text-primary-foreground ring-4 ring-primary/20'
+                              : stage.status === 'delayed'
+                              ? 'bg-red-50 border-red-400 text-red-500'
+                              : 'bg-emerald-50 border-emerald-400 text-emerald-600'
+                          }`}>
+                            {stage.status === 'active'
+                              ? <CircleDot className="h-4 w-4" />
+                              : stage.status === 'delayed'
+                              ? <AlertTriangle className="h-3.5 w-3.5" />
+                              : <CheckCircle2 className="h-3.5 w-3.5" />
+                            }
+                          </div>
+                          {!isLast && <div className="w-0.5 flex-1 bg-border mt-1 mb-1 min-h-[24px]" />}
+                        </div>
+
+                        {/* Stage info */}
+                        <div className={`flex-1 pb-4 min-w-0 ${isLast ? 'pb-0' : ''}`}>
+                          <div className={`rounded-lg border p-3 ${
+                            stage.status === 'active' ? 'border-primary/30 bg-primary/5' :
+                            stage.status === 'delayed' ? 'border-red-200 bg-red-50/40 dark:bg-red-950/20' :
+                            'border-border bg-muted/20'
+                          }`}>
+                            <div className="flex items-start justify-between gap-2 flex-wrap">
+                              <div>
+                                <p className="text-sm font-semibold">{stage.stageName}</p>
+                                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
+                                  <span className="flex items-center gap-1">
+                                    <Building2 className="h-3 w-3" />{stage.departmentName}
+                                  </span>
+                                  {stage.assigneeName && (
+                                    <span className="flex items-center gap-1">
+                                      <UserIcon className="h-3 w-3" />{stage.assigneeName}
+                                    </span>
+                                  )}
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />{stage.durationHours}h
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {stage.isOverSla && (
+                                  <Badge className="text-xs bg-red-100 text-red-600 border border-red-200 shadow-none">
+                                    +{stage.delayHours}h
+                                  </Badge>
+                                )}
+                                <Badge variant="outline" className={`text-xs ${
+                                  stage.status === 'active' ? 'border-primary/30 text-primary' :
+                                  stage.status === 'delayed' ? 'border-red-300 text-red-600' :
+                                  'border-emerald-300 text-emerald-600'
+                                }`}>
+                                  {stage.status === 'active' ? t('status.active') :
+                                   stage.status === 'delayed' ? t('requests.risk.delayed') :
+                                   t('status.completed')}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* SLA usage bar */}
+                            <div className="mt-2 space-y-0.5">
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>{t('requests.slaUsage')}</span>
+                                <span className={stage.slaUsagePercent > 100 ? 'text-red-500 font-semibold' : ''}>{Math.min(stage.slaUsagePercent, 150)}%</span>
+                              </div>
+                              <Progress
+                                value={Math.min(stage.slaUsagePercent, 100)}
+                                className={`h-1.5 ${
+                                  stage.slaUsagePercent > 100 ? '[&>div]:bg-red-500' :
+                                  stage.slaUsagePercent > 70 ? '[&>div]:bg-amber-500' :
+                                  '[&>div]:bg-emerald-500'
+                                }`}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : req.timeline?.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{t('requests.noTimeline')}</p>
               ) : (
+                /* Fallback: basic timeline */
                 <div className="space-y-3">
                   {req.timeline?.map((event: any, i: number) => (
                     <div key={i} className="flex gap-3">
@@ -236,10 +354,9 @@ export default function RequestDetail() {
                         {i < (req.timeline?.length ?? 0) - 1 && <div className="w-px flex-1 bg-border mt-1" />}
                       </div>
                       <div className="pb-4 min-w-0">
-                        <p className="text-sm font-medium">{event.action}</p>
-                        {event.comment && <p className="text-xs text-muted-foreground mt-0.5">{event.comment}</p>}
+                        <p className="text-sm font-medium">{event.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {event.actorName} · {format(new Date(event.createdAt), 'MMM d, h:mm a')}
+                          {format(new Date(event.createdAt), 'MMM d, h:mm a')}
                         </p>
                       </div>
                     </div>
@@ -278,7 +395,6 @@ export default function RequestDetail() {
                 </div>
               )}
 
-              {/* Add comment */}
               <div className="flex gap-2 pt-2 border-t">
                 <Input
                   placeholder={t('requests.writeComment')}
@@ -311,33 +427,59 @@ export default function RequestDetail() {
                   {t('requests.aiPrediction')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{t('requests.delayProbability')}</span>
-                  <span className={`font-bold text-lg ${prediction.delayProbability > 0.6 ? 'text-red-500' : prediction.delayProbability > 0.3 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                    {Math.round((prediction.delayProbability ?? 0) * 100)}%
+              <CardContent className="space-y-4 text-sm">
+                {/* Risk level chip */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{t('requests.riskLevel')}</span>
+                  <span className={`font-bold text-sm px-2.5 py-1 rounded-full border ${getRiskLabel(prediction.riskLevel ?? undefined).color}`}>
+                    {getRiskLabel(prediction.riskLevel ?? undefined).label}
                   </span>
                 </div>
-                <Progress value={(prediction.delayProbability ?? 0) * 100} className="h-2" />
 
-                {prediction.estimatedCompletionHours && (
-                  <div className="flex justify-between items-center py-2 border-t">
-                    <span className="text-muted-foreground">{t('requests.estimatedCompletion')}</span>
-                    <span className="font-semibold">{prediction.estimatedCompletionHours}h</span>
+                {/* Delay probability */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t('requests.delayProbability')}</span>
+                    <span className={`font-bold text-lg ${prediction.delayProbability > 0.6 ? 'text-red-500' : prediction.delayProbability > 0.3 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                      {Math.round((prediction.delayProbability ?? 0) * 100)}%
+                    </span>
+                  </div>
+                  <Progress value={(prediction.delayProbability ?? 0) * 100} className="h-2" />
+                </div>
+
+                {/* Estimated completion */}
+                {prediction.estimatedCompletionDate && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <p className="text-xs text-muted-foreground mb-1">{t('requests.estimatedCompletion')}</p>
+                    <p className="font-semibold text-sm">
+                      {format(new Date(prediction.estimatedCompletionDate), 'MMM d, yyyy')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      ~{prediction.estimatedRemainingDays} {t('requests.daysRemaining')}
+                    </p>
                   </div>
                 )}
 
-                {prediction.riskFactors?.length > 0 && (
+                {/* Risk factors */}
+                {prediction.factors && prediction.factors.length > 0 && (
                   <div>
-                    <p className="font-medium mb-1.5">{t('requests.riskFactors')}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {prediction.riskFactors.map((factor: string, i: number) => (
-                        <Badge key={i} variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
-                          {factor}
-                        </Badge>
+                    <p className="font-medium mb-2 text-xs text-muted-foreground uppercase tracking-wide">{t('requests.riskFactors')}</p>
+                    <div className="space-y-1.5">
+                      {prediction.factors.map((factor: string, i: number) => (
+                        <div key={i} className="flex gap-2 text-xs text-muted-foreground">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-amber-500" />
+                          <span>{factor}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Confidence */}
+                {prediction.confidenceScore && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('requests.confidence')}: {Math.round(prediction.confidenceScore * 100)}%
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -359,7 +501,7 @@ export default function RequestDetail() {
                   {req.attachments?.map((att: any) => (
                     <div key={att.id} className="flex items-center gap-2 text-sm py-1">
                       <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="truncate">{att.name}</span>
+                      <span className="truncate">{att.fileName || att.name}</span>
                     </div>
                   ))}
                 </div>

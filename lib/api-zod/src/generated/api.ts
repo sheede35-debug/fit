@@ -1138,7 +1138,102 @@ export const ClassifyRequestResponse = zod.object({
   "expectedCompletionHours": zod.number(),
   "requiredDepartments": zod.array(zod.string()).optional(),
   "confidence": zod.number(),
-  "suggestedWorkflowId": zod.number().nullish()
+  "suggestedWorkflowId": zod.number().nullish(),
+  "suggestedDepartment": zod.string().optional(),
+  "suggestedEmployee": zod.string().optional(),
+  "nextAction": zod.string().optional()
 })
+
+
+/**
+ * @summary Analyze request journey stages with bottleneck detection
+ */
+export const GetRequestJourneyParams = zod.object({
+  "requestId": zod.coerce.number()
+})
+
+export const GetRequestJourneyResponse = zod.object({
+  "requestId": zod.number(),
+  "requestTitle": zod.string(),
+  "totalStages": zod.number(),
+  "completedStages": zod.number(),
+  "totalDurationHours": zod.number(),
+  "totalDelayHours": zod.number(),
+  "overallRisk": zod.enum(['low', 'medium', 'high', 'critical']),
+  "bottleneckStageName": zod.string().nullish(),
+  "stages": zod.array(zod.object({
+  "stageName": zod.string(),
+  "departmentName": zod.string(),
+  "assigneeName": zod.string().nullish(),
+  "eventType": zod.string().optional(),
+  "startedAt": zod.string(),
+  "completedAt": zod.string().nullish(),
+  "durationHours": zod.number(),
+  "slaHours": zod.number(),
+  "slaUsagePercent": zod.number(),
+  "isOverSla": zod.boolean(),
+  "isActive": zod.boolean(),
+  "delayHours": zod.number(),
+  "status": zod.enum(['active', 'completed', 'delayed'])
+})),
+  "improvementTips": zod.array(zod.string()),
+  "analysisGeneratedAt": zod.string()
+})
+
+
+/**
+ * @summary Generate AI weekly or monthly operational report
+ */
+export const getAiReportQueryPeriodDefault = `weekly`;
+
+export const GetAiReportQueryParams = zod.object({
+  "period": zod.enum(['weekly', 'monthly']).default(getAiReportQueryPeriodDefault)
+})
+
+export const GetAiReportResponse = zod.object({
+  "periodStart": zod.string(),
+  "periodEnd": zod.string(),
+  "period": zod.enum(['weekly', 'monthly']),
+  "bestPerformingDepartment": zod.string().optional(),
+  "slowestDepartment": zod.string().optional(),
+  "completedRequests": zod.number(),
+  "delayedRequests": zod.number(),
+  "newRequests": zod.number(),
+  "avgCompletionHours": zod.number(),
+  "slaComplianceRate": zod.number(),
+  "topDelayedCategories": zod.array(zod.string()).optional(),
+  "mainDelayCauses": zod.array(zod.string()).optional(),
+  "performanceTrend": zod.enum(['improving', 'declining', 'stable']),
+  "departmentSummary": zod.array(zod.object({
+  "departmentName": zod.string(),
+  "completedRequests": zod.number(),
+  "avgHours": zod.number(),
+  "slaRate": zod.number(),
+  "score": zod.number()
+})),
+  "topIssues": zod.array(zod.object({
+  "issue": zod.string(),
+  "impact": zod.enum(['low', 'medium', 'high']),
+  "count": zod.number()
+})),
+  "recommendations": zod.array(zod.string()),
+  "generatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get per-department active workload and capacity
+ */
+export const GetWorkloadStatsResponseItem = zod.object({
+  "departmentId": zod.number(),
+  "departmentName": zod.string(),
+  "activeRequests": zod.number(),
+  "capacity": zod.number(),
+  "capacityUsed": zod.number(),
+  "capacityPercent": zod.number(),
+  "overloaded": zod.boolean(),
+  "status": zod.enum(['healthy', 'busy', 'overloaded'])
+})
+export const GetWorkloadStatsResponse = zod.array(GetWorkloadStatsResponseItem)
 
 

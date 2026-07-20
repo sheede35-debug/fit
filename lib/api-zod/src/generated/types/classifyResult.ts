@@ -14,4 +14,7 @@ export interface ClassifyResult {
   confidence: number;
   /** @nullable */
   suggestedWorkflowId?: number | null;
+  suggestedDepartment?: string;
+  suggestedEmployee?: string;
+  nextAction?: string;
 }

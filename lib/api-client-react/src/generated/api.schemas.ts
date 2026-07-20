@@ -660,6 +660,141 @@ export interface ClassifyResult {
   confidence: number;
   /** @nullable */
   suggestedWorkflowId?: number | null;
+  suggestedDepartment?: string;
+  suggestedEmployee?: string;
+  nextAction?: string;
+}
+
+export type JourneyStageStatus = typeof JourneyStageStatus[keyof typeof JourneyStageStatus];
+
+
+export const JourneyStageStatus = {
+  active: 'active',
+  completed: 'completed',
+  delayed: 'delayed',
+} as const;
+
+export interface JourneyStage {
+  stageName: string;
+  departmentName: string;
+  /** @nullable */
+  assigneeName?: string | null;
+  eventType?: string;
+  startedAt: string;
+  /** @nullable */
+  completedAt?: string | null;
+  durationHours: number;
+  slaHours: number;
+  slaUsagePercent: number;
+  isOverSla: boolean;
+  isActive: boolean;
+  delayHours: number;
+  status: JourneyStageStatus;
+}
+
+export type RequestJourneyOverallRisk = typeof RequestJourneyOverallRisk[keyof typeof RequestJourneyOverallRisk];
+
+
+export const RequestJourneyOverallRisk = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+  critical: 'critical',
+} as const;
+
+export interface RequestJourney {
+  requestId: number;
+  requestTitle: string;
+  totalStages: number;
+  completedStages: number;
+  totalDurationHours: number;
+  totalDelayHours: number;
+  overallRisk: RequestJourneyOverallRisk;
+  /** @nullable */
+  bottleneckStageName?: string | null;
+  stages: JourneyStage[];
+  improvementTips: string[];
+  analysisGeneratedAt: string;
+}
+
+export interface ReportDeptSummary {
+  departmentName: string;
+  completedRequests: number;
+  avgHours: number;
+  slaRate: number;
+  score: number;
+}
+
+export type ReportIssueImpact = typeof ReportIssueImpact[keyof typeof ReportIssueImpact];
+
+
+export const ReportIssueImpact = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export interface ReportIssue {
+  issue: string;
+  impact: ReportIssueImpact;
+  count: number;
+}
+
+export type AiReportPeriod = typeof AiReportPeriod[keyof typeof AiReportPeriod];
+
+
+export const AiReportPeriod = {
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;
+
+export type AiReportPerformanceTrend = typeof AiReportPerformanceTrend[keyof typeof AiReportPerformanceTrend];
+
+
+export const AiReportPerformanceTrend = {
+  improving: 'improving',
+  declining: 'declining',
+  stable: 'stable',
+} as const;
+
+export interface AiReport {
+  periodStart: string;
+  periodEnd: string;
+  period: AiReportPeriod;
+  bestPerformingDepartment?: string;
+  slowestDepartment?: string;
+  completedRequests: number;
+  delayedRequests: number;
+  newRequests: number;
+  avgCompletionHours: number;
+  slaComplianceRate: number;
+  topDelayedCategories?: string[];
+  mainDelayCauses?: string[];
+  performanceTrend: AiReportPerformanceTrend;
+  departmentSummary: ReportDeptSummary[];
+  topIssues: ReportIssue[];
+  recommendations: string[];
+  generatedAt: string;
+}
+
+export type DeptWorkloadStatus = typeof DeptWorkloadStatus[keyof typeof DeptWorkloadStatus];
+
+
+export const DeptWorkloadStatus = {
+  healthy: 'healthy',
+  busy: 'busy',
+  overloaded: 'overloaded',
+} as const;
+
+export interface DeptWorkload {
+  departmentId: number;
+  departmentName: string;
+  activeRequests: number;
+  capacity: number;
+  capacityUsed: number;
+  capacityPercent: number;
+  overloaded: boolean;
+  status: DeptWorkloadStatus;
 }
 
 export type ListUsersParams = {
@@ -711,5 +846,17 @@ export const GetRequestTrendsPeriod = {
   week: 'week',
   month: 'month',
   quarter: 'quarter',
+} as const;
+
+export type GetAiReportParams = {
+period?: GetAiReportPeriod;
+};
+
+export type GetAiReportPeriod = typeof GetAiReportPeriod[keyof typeof GetAiReportPeriod];
+
+
+export const GetAiReportPeriod = {
+  weekly: 'weekly',
+  monthly: 'monthly',
 } as const;
 
