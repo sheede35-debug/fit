@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
@@ -190,7 +191,8 @@ export default function Dashboard() {
                     : hour < 17 ? 'dashboard.greeting.afternoon'
                     :              'dashboard.greeting.evening';
   const greeting = t(greetingKey);
-  const displayName = "Shahad"; // demo user
+  const { user: authUser } = useAuth();
+  const displayName = authUser?.name ?? "";
 
   // RTL-aware chevron
   const NavChevron = isRTL ? ChevronLeft : ChevronRight;

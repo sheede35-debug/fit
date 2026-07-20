@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import cors from "cors";
+import session from "express-session";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
@@ -39,6 +40,23 @@ app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Session middleware (used by email/password auth)
+app.set("trust proxy", 1);
+app.use(
+  session({
+    name: "flowiq.sid",
+    secret: process.env.SESSION_SECRET ?? "flowiq-dev-secret-change-in-prod",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    },
+  }),
+);
 
 // Resolve publishable key from host for multi-domain support
 app.use(

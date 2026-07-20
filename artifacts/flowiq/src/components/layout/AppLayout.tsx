@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter"
 import { useAppStore } from "@/lib/store"
 import { useTheme } from "@/components/theme-provider"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { useAuth } from "@/contexts/AuthContext"
 import {
   LayoutDashboard,
   FileText,
@@ -18,30 +19,19 @@ import {
   Sun,
   Languages,
   LogOut,
-  FlaskConical,
   FileBarChart2,
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { DEMO_MODE } from "@/App"
 import AssistantWidget from "@/components/AssistantWidget"
 
-// Demo user — shown when auth is disabled
-const DEMO_USER = {
-  fullName: "Shahad",
-  email: "shahad@acme.com",
-  initials: "SH",
-}
-
-// ─── Demo Banner ──────────────────────────────────────────────────────────────
-export function DemoBanner() {
-  const { t } = useLanguage()
-  return (
-    <div className="fixed top-0 inset-x-0 z-[100] h-9 flex items-center justify-center bg-amber-500 text-amber-950 text-xs font-semibold gap-2 px-4 select-none">
-      <FlaskConical className="h-3.5 w-3.5 shrink-0" />
-      <span>{t('demo.banner')}</span>
-    </div>
-  )
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -51,22 +41,19 @@ export function Sidebar() {
   const { t, isRTL } = useLanguage()
 
   const navItems = [
-    { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
-    { href: "/requests", labelKey: "nav.requests", icon: FileText },
-    { href: "/workflows", labelKey: "nav.workflows", icon: GitBranch },
-    { href: "/analytics", labelKey: "nav.analytics", icon: BarChart3 },
-    { href: "/ai", labelKey: "nav.aiHub", icon: BrainCircuit, highlight: true },
-    { href: "/reports", labelKey: "nav.reports", icon: FileBarChart2 },
+    { href: "/dashboard",  labelKey: "nav.dashboard",     icon: LayoutDashboard },
+    { href: "/requests",   labelKey: "nav.requests",      icon: FileText },
+    { href: "/workflows",  labelKey: "nav.workflows",     icon: GitBranch },
+    { href: "/analytics",  labelKey: "nav.analytics",     icon: BarChart3 },
+    { href: "/ai",         labelKey: "nav.aiHub",         icon: BrainCircuit, highlight: true },
+    { href: "/reports",    labelKey: "nav.reports",       icon: FileBarChart2 },
     { href: "/notifications", labelKey: "nav.notifications", icon: Bell },
-    { href: "/admin", labelKey: "nav.admin", icon: Settings },
+    { href: "/admin",      labelKey: "nav.admin",         icon: Settings },
   ]
-
-  const bannerOffset = DEMO_MODE ? "top-9" : "top-0"
-  const bannerHeight = DEMO_MODE ? "h-[calc(100dvh-2.25rem)]" : "h-dvh"
 
   return (
     <aside
-      className={`fixed ${bannerOffset} ${bannerHeight} z-50 flex flex-col border-e bg-sidebar text-sidebar-foreground transition-all duration-300 ${
+      className={`fixed top-0 h-dvh z-50 flex flex-col border-e bg-sidebar text-sidebar-foreground transition-all duration-300 ${
         sidebarOpen ? "w-64" : "w-16"
       } start-0`}
     >
@@ -126,7 +113,6 @@ export function Sidebar() {
           className="text-muted-foreground h-8 w-8"
           aria-label="Toggle sidebar"
         >
-          {/* Flip chevron direction based on open state AND RTL */}
           {isRTL
             ? (sidebarOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />)
             : (sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />)
@@ -142,12 +128,14 @@ export function Header() {
   const { sidebarOpen, toggleSidebar } = useAppStore()
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t } = useLanguage()
-  const bannerTop = DEMO_MODE ? "top-9" : "top-0"
+  const { user, logout } = useAuth()
   const sidebarW = sidebarOpen ? "start-64" : "start-16"
+
+  const initials = user ? getInitials(user.name) : "?"
 
   return (
     <header
-      className={`fixed ${bannerTop} end-0 ${sidebarW} z-40 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm transition-all duration-300`}
+      className={`fixed top-0 end-0 ${sidebarW} z-40 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm transition-all duration-300`}
     >
       {/* Left: mobile menu toggle */}
       <div className="flex items-center gap-2">
@@ -188,17 +176,27 @@ export function Header() {
           <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </Button>
 
-        {/* User */}
-        <div className="flex items-center gap-2.5 ms-1 ps-3 border-s border-border">
+        {/* User + logout */}
+        <div className="flex items-center gap-2 ms-1 ps-3 border-s border-border">
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-sm font-semibold leading-tight">{DEMO_USER.fullName}</span>
-            <span className="text-xs text-muted-foreground leading-tight">{DEMO_USER.email}</span>
+            <span className="text-sm font-semibold leading-tight">{user?.name ?? ""}</span>
+            <span className="text-xs text-muted-foreground leading-tight">{user?.email ?? ""}</span>
           </div>
           <Avatar className="h-8 w-8 ring-2 ring-border">
             <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-              {DEMO_USER.initials}
+              {initials}
             </AvatarFallback>
           </Avatar>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            aria-label="Sign out"
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </header>
@@ -208,12 +206,9 @@ export function Header() {
 // ─── AppLayout ────────────────────────────────────────────────────────────────
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { sidebarOpen } = useAppStore()
-  const bannerPt = DEMO_MODE ? "pt-9" : ""
-  const headerOffset = DEMO_MODE ? "mt-[calc(2.25rem+4rem)]" : "mt-16"
 
   return (
-    <div className={`min-h-dvh bg-background text-foreground flex flex-col ${bannerPt}`}>
-      {DEMO_MODE && <DemoBanner />}
+    <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <div className="flex flex-1 min-h-0">
         <Sidebar />
         <div
@@ -222,7 +217,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           }`}
         >
           <Header />
-          <main className={`flex-1 p-4 sm:p-6 ${headerOffset} pb-12 w-full max-w-7xl mx-auto`}>
+          <main className="flex-1 p-4 sm:p-6 mt-16 pb-12 w-full max-w-7xl mx-auto">
             {children}
           </main>
         </div>

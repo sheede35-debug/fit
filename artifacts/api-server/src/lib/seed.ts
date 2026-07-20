@@ -3,6 +3,7 @@
  * Idempotent: truncates all tables before inserting.
  */
 import { eq, sql } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 import {
   db,
   companiesTable,
@@ -52,10 +53,12 @@ export async function seedDatabase(): Promise<void> {
     .returning();
 
   // 4. Users
+  const demoPasswordHash = await bcrypt.hash("Demo123!", 10);
+
   const insertedUsers = await db
     .insert(usersTable)
     .values([
-      { companyId: company.id, name: "Shahad", email: "shahad@meridian.demo",  role: "company_admin" as const,       departmentId: null },
+      { companyId: company.id, name: "Shahad", email: "demo@flowiq.com", passwordHash: demoPasswordHash, role: "company_admin" as const, departmentId: null },
       { companyId: company.id, name: "Sarah Chen",         email: "sarah@meridian.demo",   role: "department_manager" as const,  departmentId: legalDept.id },
       { companyId: company.id, name: "Michael Torres",     email: "michael@meridian.demo", role: "department_manager" as const,  departmentId: financeDept.id },
       { companyId: company.id, name: "Aisha Patel",        email: "aisha@meridian.demo",   role: "department_manager" as const,  departmentId: hrDept.id },

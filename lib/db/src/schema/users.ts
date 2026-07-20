@@ -17,6 +17,7 @@ export const usersTable = pgTable("users", {
   role: roleEnum("role").notNull().default("employee"),
   departmentId: integer("department_id").references(() => departmentsTable.id),
   status: userStatusEnum("status").notNull().default("active"),
+  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
