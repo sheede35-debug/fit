@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "lwf7aJgP754WicVH-0z_Z"
+uri = "file://.local/outputs/AI-SaaS-Suite.pdf"
+type = "pdf"
+title = "AI SaaS Suite.pdf"

@@ -40,9 +40,6 @@ function AuthLoading() {
 
 // ─── Protected route wrapper ───────────────────────────────────────────────────
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, loading } = useAuth();
-  if (loading) return <AuthLoading />;
-  if (!user) return <Redirect to="/login" />;
   return <AppLayout><Component /></AppLayout>;
 }
 
