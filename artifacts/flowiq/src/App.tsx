@@ -13,6 +13,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import NotFound from '@/pages/not-found';
 
 import Login from '@/pages/Login';
+import Landing from '@/pages/Landing';
 import Dashboard from '@/pages/Dashboard';
 import Requests from '@/pages/Requests';
 import NewRequest from '@/pages/NewRequest';
@@ -45,13 +46,6 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <AppLayout><Component /></AppLayout>;
 }
 
-// ─── Root redirect ─────────────────────────────────────────────────────────────
-function RootRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) return <AuthLoading />;
-  return <Redirect to={user ? "/dashboard" : "/login"} />;
-}
-
 // ─── Login gate (redirect if already signed in) ────────────────────────────────
 function LoginRoute() {
   const { user, loading } = useAuth();
@@ -64,7 +58,7 @@ function LoginRoute() {
 function AppRoutes() {
   return (
     <Switch>
-      <Route path="/" component={RootRedirect} />
+      <Route path="/" component={Landing} />
       <Route path="/login" component={LoginRoute} />
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/requests/new"><ProtectedRoute component={NewRequest} /></Route>

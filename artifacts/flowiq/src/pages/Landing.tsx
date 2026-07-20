@@ -16,10 +16,10 @@ export default function Landing() {
             <span className="font-bold text-lg">FlowIQ</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/sign-in">
+            <Link href="/login">
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
-            <Link href="/sign-up">
+            <Link href="/login">
               <Button size="sm">Get Started</Button>
             </Link>
           </div>
