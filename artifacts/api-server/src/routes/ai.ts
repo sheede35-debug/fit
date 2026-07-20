@@ -101,19 +101,41 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 
   // Build a rich per-request snapshot used by the #ID lookup
   const recentRequests = requests.map(r => {
-    const dept     = r.currentDepartmentId ? departments.find(d => d.id === r.currentDepartmentId) : null;
-    const assignee = r.currentAssigneeId   ? users.find(u => u.id === r.currentAssigneeId) : null;
-    const workflow = r.workflowId          ? allWorkflows.find(w => w.id === r.workflowId) : null;
-    const steps    = r.workflowId          ? allSteps.filter(s => s.workflowId === r.workflowId).sort((a, b) => a.order - b.order) : [];
+    const dept    = r.currentDepartmentId ? departments.find(d => d.id === r.currentDepartmentId) : null;
+    const workflow = r.workflowId ? allWorkflows.find(w => w.id === r.workflowId) : null;
+    const steps   = r.workflowId
+      ? allSteps.filter(s => s.workflowId === r.workflowId).sort((a, b) => a.order - b.order)
+      : [];
     const totalSteps  = steps.length;
     const stepIndex   = r.currentStepIndex ?? 0;
     const currentStep = steps[stepIndex] ?? null;
+
+    // Stage name: use the request's currentDepartment as the authoritative source
+    // (step.departmentId can be stale/mismatched if the DB was seeded with old data)
+    const stageName = dept?.name ? `${dept.name} Review` : null;
+
+    // Assignee resolution — three-tier fallback:
+    //   1. request.currentAssigneeId (most specific)
+    //   2. workflow step's assigneeId
+    //   3. the current department's manager
+    const deptManager = dept ? users.find(u => u.id === (dept as any).managerId) : null;
+    const assigneeId  = r.currentAssigneeId ?? currentStep?.assigneeId ?? null;
+    const assignee    = (assigneeId ? users.find(u => u.id === assigneeId) : null) ?? deptManager;
+
+    // Progress: completed requests are 100%; active = steps completed so far / total
     const progressPercent = r.status === "completed" ? 100
       : totalSteps > 0 ? Math.round((stepIndex / totalSteps) * 100)
       : 0;
-    const waitingHours = hoursBetween(r.createdAt, new Date());
-    const stageWaitingHours = waitingHours; // approximation: time since creation
-    const stepSlaHours = currentStep?.slaHours ?? 48;
+
+    const waitingHours    = hoursBetween(r.createdAt, new Date());
+    const stepSlaHours    = currentStep?.slaHours ?? 48;
+
+    // Estimated completion: use stored value when available, otherwise sum remaining SLA hours
+    let estimatedCompletionDate = r.estimatedCompletionDate?.toISOString() ?? null;
+    if (!estimatedCompletionDate && r.status !== "completed" && r.status !== "rejected") {
+      const remainingSlaHours = steps.slice(stepIndex).reduce((sum, s) => sum + (s.slaHours ?? 48), 0);
+      estimatedCompletionDate = new Date(Date.now() + remainingSlaHours * 60 * 60 * 1000).toISOString();
+    }
 
     return {
       id:                     r.id,
@@ -121,16 +143,16 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
       status:                 r.status,
       priority:               r.priority,
       currentDept:            dept?.name,
-      assigneeName:           assignee?.name,
+      assigneeName:           assignee?.name ?? null,
       progressPercent,
       waitingHours,
-      stageWaitingHours,
+      stageWaitingHours:      waitingHours, // time-in-stage approx = total elapsed for current assignment
       stepSlaHours,
-      workflowName:           workflow?.name,
+      workflowName:           workflow?.name ?? null,
       currentStepIndex:       stepIndex,
       totalSteps,
-      currentStageName:       currentStep?.name ?? (steps[0]?.name ?? null),
-      estimatedCompletionDate: r.estimatedCompletionDate?.toISOString() ?? null,
+      currentStageName:       stageName,
+      estimatedCompletionDate,
       delayRisk:              r.delayRisk ?? "low",
       createdAt:              r.createdAt.toISOString(),
       completedAt:            r.completedAt?.toISOString() ?? null,
