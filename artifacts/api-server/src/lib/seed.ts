@@ -55,7 +55,7 @@ export async function seedDatabase(): Promise<void> {
   const insertedUsers = await db
     .insert(usersTable)
     .values([
-      { companyId: company.id, name: "Shahad Al-Rashidi", email: "shahad@meridian.demo",  role: "company_admin" as const,       departmentId: null },
+      { companyId: company.id, name: "Shahad", email: "shahad@meridian.demo",  role: "company_admin" as const,       departmentId: null },
       { companyId: company.id, name: "Sarah Chen",         email: "sarah@meridian.demo",   role: "department_manager" as const,  departmentId: legalDept.id },
       { companyId: company.id, name: "Michael Torres",     email: "michael@meridian.demo", role: "department_manager" as const,  departmentId: financeDept.id },
       { companyId: company.id, name: "Aisha Patel",        email: "aisha@meridian.demo",   role: "department_manager" as const,  departmentId: hrDept.id },
@@ -152,7 +152,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "high", currentStepIndex: 0, currentDepartmentId: legalDept.id,
     currentAssigneeId: sarah.id, delayRisk: "high", aiRiskScore: 78, createdAt: daysAgo(5, 11),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi",         userId: shahad.id, departmentId: null,         createdAt: daysAgo(5, 11) },
+      { eventType: "created",  description: "Request submitted by Shahad",         userId: shahad.id, departmentId: null,         createdAt: daysAgo(5, 11) },
       { eventType: "assigned", description: "Assigned to Legal department for initial review", userId: sarah.id,  departmentId: legalDept.id, createdAt: daysAgo(5, 10) },
     ],
     notifs: [
@@ -169,7 +169,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "high", currentStepIndex: 0, currentDepartmentId: financeDept.id,
     currentAssigneeId: michael.id, delayRisk: "medium", aiRiskScore: 52, createdAt: daysAgo(3, 4),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi", userId: shahad.id,  departmentId: null,          createdAt: daysAgo(3, 4) },
+      { eventType: "created",  description: "Request submitted by Shahad", userId: shahad.id,  departmentId: null,          createdAt: daysAgo(3, 4) },
       { eventType: "assigned", description: "Assigned to Finance for budget review",  userId: michael.id, departmentId: financeDept.id, createdAt: daysAgo(3, 3) },
     ],
     notifs: [
@@ -185,7 +185,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "medium", currentStepIndex: 1, currentDepartmentId: itDept.id,
     currentAssigneeId: james.id, delayRisk: "low", aiRiskScore: 22, createdAt: daysAgo(9, 2),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi",                       userId: shahad.id, departmentId: null,        createdAt: daysAgo(9, 2) },
+      { eventType: "created",  description: "Request submitted by Shahad",                       userId: shahad.id, departmentId: null,        createdAt: daysAgo(9, 2) },
       { eventType: "assigned", description: "Assigned to HR for onboarding review",                         userId: aisha.id,  departmentId: hrDept.id,   createdAt: daysAgo(9, 1) },
       { eventType: "advanced", description: "HR review approved — advancing to IT for system provisioning", userId: aisha.id,  departmentId: itDept.id,   createdAt: daysAgo(7, 3) },
     ],
@@ -202,7 +202,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "critical", currentStepIndex: 1, currentDepartmentId: legalDept.id,
     currentAssigneeId: sarah.id, delayRisk: "critical", aiRiskScore: 91, createdAt: daysAgo(11, 6),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi",                            userId: shahad.id,  departmentId: null,          createdAt: daysAgo(11, 6) },
+      { eventType: "created",  description: "Request submitted by Shahad",                            userId: shahad.id,  departmentId: null,          createdAt: daysAgo(11, 6) },
       { eventType: "assigned", description: "Assigned to Finance for initial review",                            userId: michael.id, departmentId: financeDept.id, createdAt: daysAgo(11, 5) },
       { eventType: "advanced", description: "Finance review approved — advancing to Legal for contract terms",   userId: michael.id, departmentId: legalDept.id,   createdAt: daysAgo(9, 2) },
     ],
@@ -220,7 +220,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "medium", currentStepIndex: 0, currentDepartmentId: itDept.id,
     currentAssigneeId: james.id, delayRisk: "low", aiRiskScore: 15, createdAt: daysAgo(1, 3),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi", userId: shahad.id, departmentId: null,      createdAt: daysAgo(1, 3) },
+      { eventType: "created",  description: "Request submitted by Shahad", userId: shahad.id, departmentId: null,      createdAt: daysAgo(1, 3) },
       { eventType: "assigned", description: "Assigned to IT for access provisioning", userId: james.id,  departmentId: itDept.id, createdAt: daysAgo(1, 2) },
     ],
     notifs: [
@@ -236,7 +236,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "critical", currentStepIndex: 0, currentDepartmentId: legalDept.id,
     currentAssigneeId: sarah.id, delayRisk: "critical", aiRiskScore: 95, createdAt: daysAgo(7, 8),
     events: [
-      { eventType: "created",   description: "Request submitted by Shahad Al-Rashidi",               userId: shahad.id, departmentId: null,         createdAt: daysAgo(7, 8) },
+      { eventType: "created",   description: "Request submitted by Shahad",               userId: shahad.id, departmentId: null,         createdAt: daysAgo(7, 8) },
       { eventType: "assigned",  description: "Assigned to Legal for review",                         userId: sarah.id,  departmentId: legalDept.id, createdAt: daysAgo(7, 7) },
       { eventType: "escalated", description: "SLA breached by 48h — escalated to department head",  userId: sarah.id,  departmentId: legalDept.id, createdAt: daysAgo(5, 0) },
     ],
@@ -257,7 +257,7 @@ export async function seedDatabase(): Promise<void> {
     currentAssigneeId: null, delayRisk: "low", aiRiskScore: 10,
     createdAt: daysAgo(8, 4), completedAt: daysAgo(6, 2),
     events: [
-      { eventType: "created",   description: "Request submitted by Shahad Al-Rashidi",               userId: shahad.id, departmentId: null,      createdAt: daysAgo(8, 4) },
+      { eventType: "created",   description: "Request submitted by Shahad",               userId: shahad.id, departmentId: null,      createdAt: daysAgo(8, 4) },
       { eventType: "assigned",  description: "Assigned to IT for provisioning",                      userId: james.id,  departmentId: itDept.id, createdAt: daysAgo(8, 3) },
       { eventType: "completed", description: "VPN access granted — all 5 certificates provisioned",  userId: james.id,  departmentId: itDept.id, createdAt: daysAgo(6, 2) },
     ],
@@ -346,7 +346,7 @@ export async function seedDatabase(): Promise<void> {
     priority: "high", currentStepIndex: 0, currentDepartmentId: legalDept.id,
     currentAssigneeId: sarah.id, delayRisk: "low", aiRiskScore: 20, createdAt: daysAgo(0, 5),
     events: [
-      { eventType: "created",  description: "Request submitted by Shahad Al-Rashidi", userId: shahad.id, departmentId: null,         createdAt: daysAgo(0, 5) },
+      { eventType: "created",  description: "Request submitted by Shahad", userId: shahad.id, departmentId: null,         createdAt: daysAgo(0, 5) },
       { eventType: "assigned", description: "Assigned to Legal for initial review",   userId: sarah.id,  departmentId: legalDept.id, createdAt: daysAgo(0, 4) },
     ],
     notifs: [
