@@ -20,16 +20,16 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]+$/, "");
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser | null>({
+    id: 1,
+    name: "Demo User",
+    email: "demo@flowiq.com",
+    role: "Manager",
+    departmentId: null,
+  });
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/auth/me`, { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => setUser(data ?? null))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
+  const [loading, setLoading] = useState(false);
+
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_BASE}/api/auth/login`, {
