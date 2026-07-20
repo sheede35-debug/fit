@@ -26,9 +26,9 @@ import { DEMO_MODE } from "@/App"
 
 // Demo user — shown when auth is disabled
 const DEMO_USER = {
-  fullName: "Alex Chen",
-  email: "alex.chen@acme.com",
-  initials: "AC",
+  fullName: "Shahad",
+  email: "shahad@acme.com",
+  initials: "SH",
 }
 
 // ─── Demo Banner ──────────────────────────────────────────────────────────────
