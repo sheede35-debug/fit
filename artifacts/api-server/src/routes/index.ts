@@ -9,6 +9,7 @@ import commentsRouter from "./comments";
 import notificationsRouter from "./notifications";
 import analyticsRouter from "./analytics";
 import aiRouter from "./ai";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(commentsRouter);
 router.use(notificationsRouter);
 router.use(analyticsRouter);
 router.use(aiRouter);
+router.use(adminRouter);
 
 export default router;

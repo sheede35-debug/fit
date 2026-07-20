@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedDatabase, isDatabaseEmpty } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -15,11 +16,29 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
+async function start() {
+  // Auto-seed if DB is empty
+  try {
+    const empty = await isDatabaseEmpty();
+    if (empty) {
+      logger.info("Database is empty — seeding demo data…");
+      await seedDatabase();
+      logger.info("Demo data seeded successfully.");
+    } else {
+      logger.info("Database already has data — skipping auto-seed.");
+    }
+  } catch (err) {
+    logger.warn({ err }, "Auto-seed failed (non-fatal — continuing startup)");
   }
 
-  logger.info({ port }, "Server listening");
-});
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+
+    logger.info({ port }, "Server listening");
+  });
+}
+
+start();

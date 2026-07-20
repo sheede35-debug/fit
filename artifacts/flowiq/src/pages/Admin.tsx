@@ -1,14 +1,118 @@
 import { useState } from "react";
 import { useListUsers, useListDepartments, useListCompanies, useHealthCheck } from "@workspace/api-client-react";
+import { queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users, Building2, Shield, Activity, Globe, FlaskConical } from "lucide-react";
-import { format } from "date-fns";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Settings, Users, Building2, Shield, Activity, Globe, FlaskConical, RotateCcw, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+function DemoResetCard() {
+  const { t } = useLanguage();
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
+  const handleReset = async () => {
+    setStatus("loading");
+    setErrorMsg("");
+    try {
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
+      const res  = await fetch(`${base}/api/admin/seed`, { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Unknown error");
+
+      // Invalidate all cached queries so every page refreshes
+      await queryClient.invalidateQueries();
+      setStatus("success");
+      // Reset to idle after 4s
+      setTimeout(() => setStatus("idle"), 4000);
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Reset failed");
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 5000);
+    }
+  };
+
+  return (
+    <Card className="border-amber-200 dark:border-amber-800">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <FlaskConical className="h-4 w-4 text-amber-500" />
+          {t('admin.demoMode')}
+        </CardTitle>
+        <CardDescription>{t('admin.demoModeDesc')}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200">
+          {t('admin.demoResetInfo')}
+        </div>
+
+        {/* Status banners */}
+        {status === "success" && (
+          <div className="flex items-center gap-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-3">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+            <p className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">{t('admin.demoResetSuccess')}</p>
+          </div>
+        )}
+        {status === "error" && (
+          <div className="flex items-center gap-2.5 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3">
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+            <div>
+              <p className="text-sm text-red-700 dark:text-red-300 font-medium">{t('admin.demoResetError')}</p>
+              {errorMsg && <p className="text-xs text-red-600 dark:text-red-400 mt-0.5 font-mono">{errorMsg}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Action button with confirmation dialog */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/30"
+              disabled={status === "loading"}
+            >
+              <RotateCcw className={`h-4 w-4 ${status === "loading" ? "animate-spin" : ""}`} />
+              {status === "loading" ? t('admin.demoResetting') : t('admin.demoResetButton')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <FlaskConical className="h-5 w-5 text-amber-500" />
+                {t('admin.demoResetConfirmTitle')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t('admin.demoResetConfirmDesc')}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleReset}
+                className="bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <RotateCcw className="h-4 w-4 me-1.5" />
+                {t('admin.demoResetConfirmAction')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <p className="text-xs text-muted-foreground">{t('admin.demoResetNote')}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Admin() {
   const { data: users, isLoading: isLoadingUsers } = useListUsers({});
@@ -178,22 +282,9 @@ export default function Admin() {
           </Card>
         </TabsContent>
 
-        {/* Security Tab */}
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FlaskConical className="h-4 w-4 text-amber-500" />
-                {t('admin.demoMode')}
-              </CardTitle>
-              <CardDescription>{t('admin.demoModeDesc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-800 dark:text-amber-200 font-mono">
-                {t('admin.enableAuth')}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Security Tab — now includes Demo Reset */}
+        <TabsContent value="security" className="space-y-4">
+          <DemoResetCard />
         </TabsContent>
 
         {/* Settings Tab */}

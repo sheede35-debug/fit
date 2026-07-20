@@ -55,18 +55,20 @@ export default function RequestDetail() {
   const commentMut = useCreateComment();
 
   const handleAdvance = () => {
-    advanceMut.mutate({ data: { comment: advanceComment } }, {
+    advanceMut.mutate({ requestId: id, data: { comment: advanceComment } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: ["listRequests"] });
         setAdvanceComment("");
       }
     });
   };
 
   const handleReject = () => {
-    rejectMut.mutate({ data: { reason: rejectReason } }, {
+    rejectMut.mutate({ requestId: id, data: { reason: rejectReason } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: ["listRequests"] });
         setRejectReason("");
       }
     });

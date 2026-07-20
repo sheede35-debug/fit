@@ -85,14 +85,16 @@ export default function Dashboard() {
   const { t, isRTL } = useLanguage();
 
   // Data
-  const { data: allRequests, isLoading: loadingReqs } = useListRequests({});
+  const { data: allRequests, isLoading: loadingReqs } = useListRequests({}, {
+    query: { refetchInterval: 30000 },
+  });
   const { data: notifications, isLoading: loadingNotifs } = useListNotifications({});
   const advanceMut = useAdvanceRequest();
 
   // Latest request for journey view (first in list = most recent)
   const latestReq = allRequests?.[0];
   const { data: latestDetail } = useGetRequest(latestReq?.id ?? 0, {
-    query: { enabled: !!latestReq?.id },
+    query: { enabled: !!latestReq?.id, queryKey: ["getRequest", latestReq?.id ?? 0] },
   });
 
   // Derived KPIs
