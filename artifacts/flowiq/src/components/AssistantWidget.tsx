@@ -5,6 +5,46 @@ import { Input } from "@/components/ui/input";
 import { BrainCircuit, X, Send, Bot, User, Sparkles } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+/**
+ * Renders AI message text with lightweight markdown:
+ * - **bold** → <strong>
+ * - Line breaks preserved
+ * - Divider lines (─────) rendered as styled <hr>-like spans
+ */
+function RenderMessage({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <>
+      {lines.map((line, li) => {
+        // Divider lines — render as a subtle horizontal rule
+        if (/^[─━—\-]{6,}$/.test(line.trim())) {
+          return <hr key={li} className="border-border/50 my-1" />;
+        }
+        // Split on **bold** markers
+        const parts = line.split(/(\*\*[^*]*\*\*)/g);
+        const content = parts.map((part, pi) =>
+          /^\*\*[^*]*\*\*$/.test(part) ? (
+            <strong key={pi} className="font-semibold text-foreground">
+              {part.slice(2, -2)}
+            </strong>
+          ) : (
+            <span key={pi}>{part}</span>
+          )
+        );
+        // Empty line → a small spacer
+        if (line.trim() === "") {
+          return <span key={li} className="block h-1" />;
+        }
+        return (
+          <span key={li} className="block leading-relaxed">
+            {content}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 const STARTER_PROMPTS_EN = [
   "Check my request status",
   "Help me create a request",
@@ -113,13 +153,15 @@ export default function AssistantWidget() {
                   )}
                 </div>
                 <div
-                  className={`rounded-xl px-3 py-2 text-xs max-w-[80%] leading-relaxed whitespace-pre-wrap ${
+                  className={`rounded-xl px-3 py-2 text-xs leading-relaxed ${
                     msg.role === "ai"
-                      ? "bg-muted text-foreground"
-                      : "bg-primary text-primary-foreground"
+                      ? "bg-muted text-foreground max-w-[96%]"
+                      : "bg-primary text-primary-foreground max-w-[80%] whitespace-pre-wrap"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "ai"
+                    ? <RenderMessage text={msg.content} />
+                    : msg.content}
                 </div>
               </div>
             ))}

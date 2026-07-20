@@ -418,6 +418,156 @@ export function classifyRequest(
   };
 }
 
+// ─── Rich request briefing helpers ───────────────────────────────────────────
+
+function riskIcon(risk: string): string {
+  if (risk === "critical" || risk === "high") return "🔴";
+  if (risk === "medium")                       return "🟡";
+  return "🟢";
+}
+
+function riskLabel(risk: string): string {
+  if (risk === "critical") return "Critical — Immediate Action Required";
+  if (risk === "high")     return "Delayed — SLA Breached";
+  if (risk === "medium")   return "At Risk — Approaching SLA Limit";
+  return "On Track";
+}
+
+function statusIcon(status: string): string {
+  if (status === "completed") return "✅";
+  if (status === "rejected")  return "❌";
+  if (status === "escalated") return "⚡";
+  return "🔄";
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function formatEstDate(iso: string | null): string {
+  if (!iso) return "N/A";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+    + " · " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+}
+
+function nextAction(req: {
+  status: string; currentDept?: string; assigneeName?: string;
+  currentStepIndex: number; totalSteps: number; currentStageName?: string | null;
+  workflowName?: string; priority: string;
+}): string {
+  if (req.status === "completed") return "No action required — request is fully approved and closed.";
+  if (req.status === "rejected")  return "Request was rejected. Submitter may revise and resubmit if applicable.";
+  const assignee = req.assigneeName ?? "Assigned reviewer";
+  const dept     = req.currentDept ?? "current department";
+  const stage    = req.currentStageName ?? `Step ${req.currentStepIndex + 1}`;
+  if (req.currentStepIndex + 1 >= req.totalSteps) {
+    return `${assignee} (${dept}) must issue final approval at the "${stage}" stage to complete this request.`;
+  }
+  return `${assignee} (${dept}) must review and approve the "${stage}" stage to advance the request to the next department.`;
+}
+
+function aiRecommendation(req: {
+  waitingHours: number; stepSlaHours: number; priority: string;
+  delayRisk: string; currentDept?: string; assigneeName?: string;
+  status: string; progressPercent: number;
+}): string {
+  if (req.status === "completed") return "This request has been successfully completed. Archive and use as a benchmark for future similar requests.";
+  if (req.status === "rejected")  return "Review the rejection reason, address the documented issues, and resubmit with corrected information.";
+
+  const overSla  = req.waitingHours > req.stepSlaHours;
+  const pct      = req.stepSlaHours > 0 ? Math.round((req.waitingHours / req.stepSlaHours) * 100) : 0;
+  const parts: string[] = [];
+
+  if (req.delayRisk === "critical" || req.delayRisk === "high") {
+    parts.push(`This request has been waiting **${req.waitingHours}h** against a **${req.stepSlaHours}h** SLA target (${pct}% of limit).`);
+    parts.push(`Recommend immediate escalation to the **${req.currentDept ?? "department"}** head and assignment of a secondary reviewer.`);
+  } else if (req.delayRisk === "medium") {
+    parts.push(`This request is at ${pct}% of its SLA window. Monitor closely to avoid breach.`);
+    parts.push(`Ensure **${req.assigneeName ?? "the assigned reviewer"}** is unblocked and has all required documents.`);
+  } else {
+    parts.push(`Request is progressing within the expected ${req.stepSlaHours}h SLA window (currently at ${pct}%).`);
+    parts.push("No immediate intervention required. Continue standard review process.");
+  }
+
+  if (req.priority === "critical") {
+    parts.push("⚡ **Critical priority** — this request should be treated as a top-queue item for all reviewers.");
+  } else if (req.priority === "high") {
+    parts.push("This is a **high priority** request — ensure it is not deprioritised behind standard items.");
+  }
+
+  return parts.join(" ");
+}
+
+function buildRequestBriefing(req: {
+  id: number; title: string; status: string; priority: string;
+  currentDept?: string; assigneeName?: string; progressPercent: number;
+  waitingHours: number; stageWaitingHours: number; stepSlaHours: number;
+  workflowName?: string; currentStepIndex: number; totalSteps: number;
+  currentStageName?: string | null; estimatedCompletionDate: string | null;
+  delayRisk: string; createdAt: string; completedAt?: string | null;
+  category?: string | null;
+}): string {
+  const divider = "─────────────────────────────────";
+  const reqCode = `REQ-${String(req.id).padStart(4, "0")}`;
+
+  const lines: string[] = [
+    `📋  REQUEST BRIEFING — ${reqCode}`,
+    divider,
+    "",
+    `**Title:**       ${req.title}`,
+    `**Request ID:**  ${reqCode}`,
+    `**Status:**      ${statusIcon(req.status)} ${capitalize(req.status)}`,
+    `**Priority:**    ${req.priority === "critical" ? "🔴" : req.priority === "high" ? "🟠" : req.priority === "medium" ? "🟡" : "⚪"} ${capitalize(req.priority)}`,
+    req.category ? `**Category:**    ${req.category}` : null,
+    "",
+    divider,
+    "📍  ROUTING & ASSIGNMENT",
+    divider,
+    "",
+    `**Department:**       ${req.currentDept ?? "—"}`,
+    `**Assigned To:**      ${req.assigneeName ?? "Unassigned"}`,
+    `**Workflow:**         ${req.workflowName ?? "—"}`,
+    req.totalSteps > 0
+      ? `**Current Stage:**    Step ${req.currentStepIndex + 1} of ${req.totalSteps}${req.currentStageName ? ` — ${req.currentStageName}` : ""}`
+      : null,
+    "",
+    divider,
+    "📊  PROGRESS & TIMELINE",
+    divider,
+    "",
+    `**Progress:**         ${req.progressPercent}% complete`,
+    `**Time in Stage:**    ${req.stageWaitingHours}h  (SLA target: ${req.stepSlaHours}h)`,
+    `**Total Elapsed:**    ${req.waitingHours}h since submission`,
+    `**Submitted:**        ${new Date(req.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+    req.completedAt
+      ? `**Completed:**        ${new Date(req.completedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+      : `**Est. Completion:**  ${formatEstDate(req.estimatedCompletionDate)}`,
+    "",
+    divider,
+    "⚠️   AI RISK ASSESSMENT",
+    divider,
+    "",
+    `**Risk Level:**  ${riskIcon(req.delayRisk)} ${riskLabel(req.delayRisk)}`,
+    "",
+    divider,
+    "✅  NEXT REQUIRED ACTION",
+    divider,
+    "",
+    nextAction(req),
+    "",
+    divider,
+    "💡  AI RECOMMENDATION",
+    divider,
+    "",
+    aiRecommendation(req),
+  ].filter((l): l is string => l !== null);
+
+  return lines.join("\n");
+}
+
+// ─── Main chat response function ──────────────────────────────────────────────
+
 export function generateAiChatResponse(message: string, data: {
   totalRequests:              number;
   activeRequests:             number;
@@ -429,22 +579,31 @@ export function generateAiChatResponse(message: string, data: {
   mostDelayedRequestType:     string;
   avgCompletionHours:         number;
   topEmployee:                string;
-  recentRequests:             Array<{ id: number; title: string; status: string; priority: string; currentDept?: string }>;
+  recentRequests: Array<{
+    id: number; title: string; status: string; priority: string;
+    currentDept?: string; assigneeName?: string; progressPercent: number;
+    waitingHours: number; stageWaitingHours: number; stepSlaHours: number;
+    workflowName?: string; currentStepIndex: number; totalSteps: number;
+    currentStageName?: string | null; estimatedCompletionDate: string | null;
+    delayRisk: string; createdAt: string; completedAt?: string | null;
+    category?: string | null;
+  }>;
 }) {
   const lower = message.toLowerCase();
   let response = "";
 
-  // Request status lookup by ID
-  const idMatch = message.match(/#(\d+)/);
+  // ── Request briefing by ID ── e.g. "#2" or "request 2" or "REQ-0002"
+  const idMatch = message.match(/#(\d+)/i)
+    ?? message.match(/\breq[-\s]?(\d+)\b/i)
+    ?? message.match(/\brequest\s+(?:id\s+)?(\d+)\b/i);
+
   if (idMatch) {
     const reqId = parseInt(idMatch[1]);
     const found = data.recentRequests.find(r => r.id === reqId);
     if (found) {
-      const statusLabel = found.status === "active" ? "in progress" : found.status;
-      response = `Request **#${reqId}** — "${found.title}" is currently **${statusLabel}**${found.currentDept ? ` in the **${found.currentDept}** department` : ""}.\n\n` +
-        `Priority: **${found.priority}**. You can view full details including the journey timeline on the Request Detail page.`;
+      response = buildRequestBriefing(found);
     } else {
-      response = `I couldn't find Request #${reqId} in the recent data. Please check the Requests page for the full list, or make sure the request ID is correct.`;
+      response = `I couldn't find **REQ-${String(reqId).padStart(4, "0")}** in the active dataset (${data.totalRequests} requests loaded).\n\nPlease verify the request ID on the **Requests** page, or try a different ID. Note that very old or archived requests may not appear in this view.`;
     }
   } else if (lower.includes("create") && (lower.includes("request") || lower.includes("new"))) {
     response = `To create a new request:\n\n1. Click **Requests → New Request** in the sidebar\n2. Select a workflow (Legal Contract Review, Finance Budget Approval, HR Onboarding, or IT Access Request)\n3. Write a descriptive title — be specific, e.g. "Legal review for Vendor Contract - Acme Corp"\n4. Click **AI Auto-Classify** to get intelligent routing suggestions\n\nThe AI will recommend the right department (${data.currentBottleneckDepartment} is currently the busiest), priority level, and workflow based on your description.`;

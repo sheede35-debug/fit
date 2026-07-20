@@ -65,10 +65,12 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
     return;
   }
 
-  const [requests, departments, users] = await Promise.all([
+  const [requests, departments, users, allWorkflows, allSteps] = await Promise.all([
     db.select().from(requestsTable).where(eq(requestsTable.companyId, DEFAULT_COMPANY_ID)),
     db.select().from(departmentsTable).where(eq(departmentsTable.companyId, DEFAULT_COMPANY_ID)),
     db.select().from(usersTable).where(eq(usersTable.companyId, DEFAULT_COMPANY_ID)),
+    db.select().from(workflowsTable).where(eq(workflowsTable.companyId, DEFAULT_COMPANY_ID)),
+    db.select().from(workflowStepsTable),
   ]);
 
   const completed = requests.filter(r => r.status === "completed" && r.completedAt);
@@ -97,15 +99,44 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 
   const aiRiskScore = Math.min(100, Math.round(delayed.length / Math.max(1, requests.length) * 100 * 1.5));
 
-  const recentRequests = requests.slice(-20).map(r => ({
-    id:          r.id,
-    title:       r.title,
-    status:      r.status,
-    priority:    r.priority,
-    currentDept: r.currentDepartmentId
-      ? departments.find(d => d.id === r.currentDepartmentId)?.name
-      : undefined,
-  }));
+  // Build a rich per-request snapshot used by the #ID lookup
+  const recentRequests = requests.map(r => {
+    const dept     = r.currentDepartmentId ? departments.find(d => d.id === r.currentDepartmentId) : null;
+    const assignee = r.currentAssigneeId   ? users.find(u => u.id === r.currentAssigneeId) : null;
+    const workflow = r.workflowId          ? allWorkflows.find(w => w.id === r.workflowId) : null;
+    const steps    = r.workflowId          ? allSteps.filter(s => s.workflowId === r.workflowId).sort((a, b) => a.order - b.order) : [];
+    const totalSteps  = steps.length;
+    const stepIndex   = r.currentStepIndex ?? 0;
+    const currentStep = steps[stepIndex] ?? null;
+    const progressPercent = r.status === "completed" ? 100
+      : totalSteps > 0 ? Math.round((stepIndex / totalSteps) * 100)
+      : 0;
+    const waitingHours = hoursBetween(r.createdAt, new Date());
+    const stageWaitingHours = waitingHours; // approximation: time since creation
+    const stepSlaHours = currentStep?.slaHours ?? 48;
+
+    return {
+      id:                     r.id,
+      title:                  r.title,
+      status:                 r.status,
+      priority:               r.priority,
+      currentDept:            dept?.name,
+      assigneeName:           assignee?.name,
+      progressPercent,
+      waitingHours,
+      stageWaitingHours,
+      stepSlaHours,
+      workflowName:           workflow?.name,
+      currentStepIndex:       stepIndex,
+      totalSteps,
+      currentStageName:       currentStep?.name ?? (steps[0]?.name ?? null),
+      estimatedCompletionDate: r.estimatedCompletionDate?.toISOString() ?? null,
+      delayRisk:              r.delayRisk ?? "low",
+      createdAt:              r.createdAt.toISOString(),
+      completedAt:            r.completedAt?.toISOString() ?? null,
+      category:               r.category ?? null,
+    };
+  });
 
   const stats = {
     totalRequests:               requests.length,
