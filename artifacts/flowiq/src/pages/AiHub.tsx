@@ -17,7 +17,7 @@ export default function AiHub() {
   const { data: depts } = useListDepartments();
   const chatMut = useChatWithAi();
   const simMut = useRunWhatIfSimulation();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
 
   const [chatMessage, setChatMessage] = useState("");
   const [messages, setMessages] = useState<{ role: 'ai' | 'user', content: string }[]>([
@@ -168,7 +168,7 @@ export default function AiHub() {
                     <p className="font-medium">{t('ai.recommendations')}</p>
                     {summary.recommendations.map((rec: string, i: number) => (
                       <div key={i} className="flex gap-2 text-sm text-muted-foreground">
-                        <ArrowRight className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                        <ArrowRight className={`h-3.5 w-3.5 shrink-0 mt-0.5 text-primary ${isRTL ? 'rotate-180' : ''}`} />
                         <span>{rec}</span>
                       </div>
                     ))}
@@ -195,7 +195,11 @@ export default function AiHub() {
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                  className={`flex gap-2.5 ${
+                    msg.role === 'user'
+                      ? (isRTL ? '' : 'flex-row-reverse')
+                      : (isRTL ? 'flex-row-reverse' : '')
+                  }`}
                 >
                   <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
                     msg.role === 'ai' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
@@ -212,7 +216,7 @@ export default function AiHub() {
                 </div>
               ))}
               {chatMut.isPending && (
-                <div className="flex gap-2.5">
+                <div className={`flex gap-2.5 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <div className="h-7 w-7 rounded-full flex items-center justify-center bg-primary/10 text-primary shrink-0">
                     <Bot className="h-4 w-4" />
                   </div>
@@ -250,7 +254,7 @@ export default function AiHub() {
               <SlidersHorizontal className="h-4 w-4 text-primary" />
               {t('ai.whatIf')}
             </CardTitle>
-            <CardDescription className="text-sm">Simulate operational changes and see projected impact.</CardDescription>
+            <CardDescription className="text-sm">{t('ai.whatIfDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRunSimulation} className="space-y-4">
@@ -266,9 +270,9 @@ export default function AiHub() {
                 <div className="space-y-1.5">
                   <Label className="text-sm">{t('ai.dept')}</Label>
                   <Select value={simDept} onValueChange={setSimDept}>
-                    <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={t('common.all')} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="">{t('common.all')}</SelectItem>
                       {depts?.map((d) => (
                         <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
                       ))}

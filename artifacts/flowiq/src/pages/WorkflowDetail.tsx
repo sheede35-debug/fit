@@ -161,7 +161,7 @@ export default function WorkflowDetail() {
             {!optimizeMut.data ? (
               <div className="py-8 text-center text-muted-foreground text-sm">
                 <BrainCircuit className="h-10 w-10 mx-auto mb-3 text-primary/30" />
-                <p>Click "{t('workflows.optimize')}" to generate AI suggestions for this workflow.</p>
+                <p>{t('workflowDetail.optimizeHint').replace('{label}', t('workflows.optimize'))}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -170,7 +170,7 @@ export default function WorkflowDetail() {
                     <p className="text-sm font-medium">{sug.suggestion}</p>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
-                        <ArrowRight className="h-3 w-3 text-emerald-500" />
+                        <ArrowRight className={`h-3 w-3 text-emerald-500 ${isRTL ? 'rotate-180' : ''}`} />
                         {t('workflowDetail.improvement')}: <span className="font-semibold text-emerald-600 ms-1">{sug.estimatedImprovement}</span>
                       </span>
                       <span>

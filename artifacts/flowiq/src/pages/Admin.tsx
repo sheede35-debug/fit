@@ -203,7 +203,7 @@ export default function Admin() {
               <CardTitle className="text-base">{t('admin.settings')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">System configuration options will appear here.</p>
+              <p className="text-sm text-muted-foreground">{t('admin.settingsPlaceholder')}</p>
             </CardContent>
           </Card>
         </TabsContent>

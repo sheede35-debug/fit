@@ -12,10 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   FileText, CheckCircle2, AlertTriangle, Clock,
-  Bell, BrainCircuit, ArrowRight, ChevronRight,
+  Bell, BrainCircuit, ArrowRight, ChevronRight, ChevronLeft,
   Sparkles, CalendarClock, AlertCircle, Info,
   CircleDot, Circle, CheckCircle, Hourglass,
   TrendingUp,
@@ -119,7 +118,7 @@ export default function Dashboard() {
   // Recent requests (last 6)
   const recentRequests = useMemo(() => allRequests?.slice(0, 6) ?? [], [allRequests]);
 
-  // AI insights — derived from request data
+  // AI insights — derived from request data, fully translated
   const aiInsights = useMemo(() => {
     if (!allRequests) return [];
     const insights: { icon: React.ReactNode; text: string; type: "alert" | "info" | "tip" }[] = [];
@@ -134,59 +133,65 @@ export default function Dashboard() {
     if (critical.length > 0) {
       insights.push({
         icon: <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />,
-        text: `${critical.length} request${critical.length > 1 ? "s" : ""} at critical delay risk — immediate attention needed.`,
+        text: t('dashboard.insightCritical').replace('{n}', String(critical.length)),
         type: "alert",
       });
     }
     if (urgentSla.length > 0) {
       insights.push({
         icon: <CalendarClock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />,
-        text: `${urgentSla.length} request${urgentSla.length > 1 ? "s have" : " has"} SLA deadlines within the next 24 hours.`,
+        text: t('dashboard.insightSla').replace('{n}', String(urgentSla.length)),
         type: "alert",
       });
     }
     if (escalated.length > 0) {
       insights.push({
         icon: <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />,
-        text: `${escalated.length} escalated request${escalated.length > 1 ? "s require" : " requires"} your review.`,
+        text: t('dashboard.insightEscalated').replace('{n}', String(escalated.length)),
         type: "alert",
       });
     }
     if (high.length > 0) {
       insights.push({
         icon: <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />,
-        text: `${high.length} request${high.length > 1 ? "s are" : " is"} at high risk of delay. Consider following up with the approving department.`,
+        text: t('dashboard.insightHighRisk').replace('{n}', String(high.length)),
         type: "info",
       });
     }
     if (kpis.completed > 0) {
       insights.push({
         icon: <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />,
-        text: `You've completed ${kpis.completed} request${kpis.completed > 1 ? "s" : ""} so far. Keep up the great work!`,
+        text: t('dashboard.insightCompleted').replace('{n}', String(kpis.completed)),
         type: "tip",
       });
     }
     if (latestReq?.estimatedCompletionDate) {
       insights.push({
         icon: <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />,
-        text: `AI estimates your latest request will complete by ${format(new Date(latestReq.estimatedCompletionDate), "MMM d, yyyy")}.`,
+        text: t('dashboard.insightEstimated').replace('{date}', format(new Date(latestReq.estimatedCompletionDate), "MMM d, yyyy")),
         type: "tip",
       });
     }
     if (insights.length === 0) {
       insights.push({
         icon: <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />,
-        text: "All your requests are on track. No immediate actions required.",
+        text: t('dashboard.insightOnTrack'),
         type: "tip",
       });
     }
     return insights;
-  }, [allRequests, kpis, latestReq]);
+  }, [allRequests, kpis, latestReq, t]);
 
-  // Greeting
+  // Greeting — translated
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greetingKey = hour < 12 ? 'dashboard.greeting.morning'
+                    : hour < 17 ? 'dashboard.greeting.afternoon'
+                    :              'dashboard.greeting.evening';
+  const greeting = t(greetingKey);
   const displayName = "Shahad"; // demo user
+
+  // RTL-aware chevron
+  const NavChevron = isRTL ? ChevronLeft : ChevronRight;
 
   if (loadingReqs) return <DashboardSkeleton />;
 
@@ -200,12 +205,12 @@ export default function Dashboard() {
             {greeting}, <span className="text-primary">{displayName}</span> 👋
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {format(new Date(), "EEEE, MMMM d, yyyy")} · Here's your daily overview
+            {format(new Date(), "EEEE, MMMM d, yyyy")} · {t('dashboard.overview')}
           </p>
         </div>
         <Link href="/requests/new">
           <Button className="gap-2 shadow-sm shrink-0">
-            <FileText className="h-4 w-4" /> New Request
+            <FileText className="h-4 w-4" /> {t('requests.new')}
           </Button>
         </Link>
       </div>
@@ -220,11 +225,11 @@ export default function Dashboard() {
                 <CircleDot className="h-5 w-5" />
               </div>
               <span className="text-xs text-blue-600 font-semibold bg-blue-100 px-2 py-0.5 rounded-full">
-                In Progress
+                {t('dashboard.inProgress')}
               </span>
             </div>
             <p className="text-3xl font-bold text-blue-700">{kpis.active}</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">My Active Requests</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">{t('dashboard.myActiveRequests')}</p>
           </CardContent>
         </Card>
 
@@ -236,11 +241,11 @@ export default function Dashboard() {
                 <CheckCircle className="h-5 w-5" />
               </div>
               <span className="text-xs text-emerald-600 font-semibold bg-emerald-100 px-2 py-0.5 rounded-full">
-                Done
+                {t('dashboard.done')}
               </span>
             </div>
             <p className="text-3xl font-bold text-emerald-700">{kpis.completed}</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">My Completed Requests</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">{t('dashboard.myCompletedRequests')}</p>
           </CardContent>
         </Card>
 
@@ -253,12 +258,12 @@ export default function Dashboard() {
               </div>
               {kpis.delayed > 0 && (
                 <span className="text-xs text-red-600 font-semibold bg-red-100 px-2 py-0.5 rounded-full animate-pulse">
-                  Attention
+                  {t('dashboard.attention')}
                 </span>
               )}
             </div>
             <p className="text-3xl font-bold text-red-700">{kpis.delayed}</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">My Delayed Requests</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">{t('dashboard.myDelayedRequests')}</p>
           </CardContent>
         </Card>
 
@@ -270,11 +275,11 @@ export default function Dashboard() {
                 <Hourglass className="h-5 w-5" />
               </div>
               <span className="text-xs text-amber-600 font-semibold bg-amber-100 px-2 py-0.5 rounded-full">
-                Waiting
+                {t('dashboard.waiting')}
               </span>
             </div>
             <p className="text-3xl font-bold text-amber-700">{kpis.pending}</p>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">My Pending Tasks</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">{t('dashboard.myPendingTasks')}</p>
           </CardContent>
         </Card>
       </div>
@@ -290,7 +295,7 @@ export default function Dashboard() {
             <Card>
               <CardHeader className="pb-3 flex flex-row items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <CardTitle className="text-base font-semibold">My Latest Request Journey</CardTitle>
+                  <CardTitle className="text-base font-semibold">{t('dashboard.latestJourney')}</CardTitle>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     <span className="font-mono">REQ-{latestReq.id.toString().padStart(4, "0")}</span>
                     {" · "}
@@ -300,7 +305,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 shrink-0">
                   <StatusBadge status={latestReq.status} />
                   <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setLocation(`/requests/${latestReq.id}`)}>
-                    View <ChevronRight className="h-3.5 w-3.5" />
+                    {t('common.view')} <NavChevron className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </CardHeader>
@@ -308,7 +313,7 @@ export default function Dashboard() {
                 {/* Progress bar */}
                 <div className="mb-4">
                   <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
-                    <span>Progress</span>
+                    <span>{t('requests.progress')}</span>
                     <span className="font-semibold text-foreground">{latestReq.progressPercent ?? 0}%</span>
                   </div>
                   <Progress value={latestReq.progressPercent ?? 0} className="h-2" />
@@ -317,7 +322,6 @@ export default function Dashboard() {
                 {/* Timeline steps */}
                 {latestDetail?.timeline && latestDetail.timeline.length > 0 ? (
                   <div className="relative">
-                    {/* Horizontal scroll on mobile, flex-wrap on desktop */}
                     <div className="flex items-start gap-0 overflow-x-auto pb-2 -mx-1 px-1">
                       {latestDetail.timeline.map((event: any, i: number) => {
                         const isLast = i === latestDetail.timeline.length - 1;
@@ -344,7 +348,7 @@ export default function Dashboard() {
                               {/* Label */}
                               <div className="text-center px-1">
                                 <p className={`text-[10px] font-semibold leading-tight line-clamp-2 ${isCurrent ? "text-primary" : isCompleted ? "text-emerald-700" : "text-muted-foreground"}`}>
-                                  {event.departmentName || event.description?.split(" ")[0] || `Step ${i + 1}`}
+                                  {event.departmentName || event.description?.split(" ")[0] || `${t('newWorkflow.stepNum')} ${i + 1}`}
                                 </p>
                                 <p className="text-[9px] text-muted-foreground mt-0.5 hidden sm:block">
                                   {format(new Date(event.createdAt), "MMM d")}
@@ -368,8 +372,10 @@ export default function Dashboard() {
                       <CircleDot className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Request submitted</p>
-                      <p className="text-xs text-muted-foreground">Awaiting first review · {latestReq.currentDepartmentName || "Processing"}</p>
+                      <p className="text-sm font-medium">{t('dashboard.requestSubmitted')}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('dashboard.awaitingFirstReview')} · {latestReq.currentDepartmentName || t('dashboard.processing')}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -379,12 +385,12 @@ export default function Dashboard() {
                   {latestReq.currentDepartmentName && (
                     <span className="flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      Current dept: <span className="font-semibold text-foreground">{latestReq.currentDepartmentName}</span>
+                      {t('requests.currentDept')}: <span className="font-semibold text-foreground ms-1">{latestReq.currentDepartmentName}</span>
                     </span>
                   )}
                   <span className="flex items-center gap-1.5">
                     <Clock className="h-3 w-3 shrink-0" />
-                    Waiting: <span className="font-semibold text-foreground">{latestReq.waitingHours}h</span>
+                    {t('requests.waitingHours')}: <span className="font-semibold text-foreground ms-1">{latestReq.waitingHours}h</span>
                   </span>
                   {latestReq.delayRisk && latestReq.delayRisk !== "low" && (
                     <span className={`flex items-center gap-1.5 font-semibold ${
@@ -392,7 +398,7 @@ export default function Dashboard() {
                       latestReq.delayRisk === "high" ? "text-orange-600" : "text-amber-600"
                     }`}>
                       <AlertTriangle className="h-3 w-3" />
-                      {latestReq.delayRisk} risk
+                      {t(`risk.${latestReq.delayRisk}`)}
                     </span>
                   )}
                 </div>
@@ -403,18 +409,18 @@ export default function Dashboard() {
           {/* My Recent Requests */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold">My Recent Requests</CardTitle>
+              <CardTitle className="text-base font-semibold">{t('dashboard.recentRequests')}</CardTitle>
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setLocation("/requests")}>
-                View all <ChevronRight className="h-3.5 w-3.5" />
+                {t('dashboard.viewAll')} <NavChevron className="h-3.5 w-3.5" />
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {recentRequests.length === 0 ? (
                 <div className="px-6 py-10 text-center text-muted-foreground text-sm">
                   <FileText className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                  <p>No requests yet.</p>
+                  <p>{t('dashboard.noRequests')}</p>
                   <Button variant="outline" size="sm" className="mt-3 gap-1.5" onClick={() => setLocation("/requests/new")}>
-                    <FileText className="h-3.5 w-3.5" /> Create your first request
+                    <FileText className="h-3.5 w-3.5" /> {t('dashboard.createFirstRequest')}
                   </Button>
                 </div>
               ) : (
@@ -446,7 +452,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <StatusBadge status={req.status} />
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground" />
+                        <NavChevron className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground" />
                       </div>
                     </div>
                   ))}
@@ -466,9 +472,9 @@ export default function Dashboard() {
                 <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                   <BrainCircuit className="h-4 w-4" />
                 </div>
-                AI Assistant
+                {t('dashboard.aiAssistant')}
               </CardTitle>
-              <p className="text-xs text-muted-foreground">Personalized insights for your requests</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.aiPersonalized')}</p>
             </CardHeader>
             <CardContent className="pt-0 space-y-2.5">
               {aiInsights.map((insight, i) => (
@@ -487,7 +493,7 @@ export default function Dashboard() {
                 </div>
               ))}
 
-              {/* Quick actions */}
+              {/* Quick action */}
               {kpis.delayed > 0 && (
                 <Button
                   variant="outline"
@@ -496,7 +502,7 @@ export default function Dashboard() {
                   onClick={() => setLocation("/requests")}
                 >
                   <AlertCircle className="h-3.5 w-3.5" />
-                  View delayed requests
+                  {t('dashboard.viewDelayed')}
                 </Button>
               )}
             </CardContent>
@@ -507,7 +513,7 @@ export default function Dashboard() {
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Bell className="h-4 w-4 text-muted-foreground" />
-                Notifications
+                {t('notifications.title')}
                 {notifications && notifications.filter(n => !n.isRead).length > 0 && (
                   <Badge className="h-5 min-w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] px-1.5">
                     {notifications.filter(n => !n.isRead).length}
@@ -515,7 +521,7 @@ export default function Dashboard() {
                 )}
               </CardTitle>
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setLocation("/notifications")}>
-                All <ChevronRight className="h-3.5 w-3.5" />
+                {t('notifications.all')} <NavChevron className="h-3.5 w-3.5" />
               </Button>
             </CardHeader>
             <CardContent className="p-0">
@@ -559,7 +565,7 @@ export default function Dashboard() {
               ) : (
                 <div className="px-4 py-8 text-center text-muted-foreground text-sm">
                   <Bell className="h-7 w-7 mx-auto mb-2 opacity-20" />
-                  <p className="text-xs">No notifications yet.</p>
+                  <p className="text-xs">{t('dashboard.noNotifications')}</p>
                 </div>
               )}
             </CardContent>
@@ -571,11 +577,11 @@ export default function Dashboard() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold">My Tasks</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Requests requiring your attention</p>
+            <h2 className="text-base font-semibold">{t('dashboard.myTasks')}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('dashboard.tasksSubtitle')}</p>
           </div>
           <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={() => setLocation("/requests")}>
-            View all <ChevronRight className="h-3.5 w-3.5" />
+            {t('dashboard.viewAll')} <NavChevron className="h-3.5 w-3.5" />
           </Button>
         </div>
 
@@ -583,8 +589,8 @@ export default function Dashboard() {
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <CheckCircle2 className="h-10 w-10 mx-auto mb-3 text-emerald-400" />
-              <p className="font-medium text-foreground">All caught up!</p>
-              <p className="text-sm mt-1">You have no active tasks right now.</p>
+              <p className="font-medium text-foreground">{t('dashboard.allCaughtUp')}</p>
+              <p className="text-sm mt-1">{t('dashboard.noActiveTasks')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -619,30 +625,32 @@ export default function Dashboard() {
                     {/* Meta */}
                     <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
                       <div className="flex items-center gap-1.5">
-                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <ArrowRight className={`h-3 w-3 shrink-0 ${isRTL ? 'rotate-180' : ''}`} />
                         {req.currentDepartmentName
-                          ? <span>At <span className="font-medium text-foreground">{req.currentDepartmentName}</span></span>
-                          : <span>Processing…</span>
+                          ? <span>{t('dashboard.atDept')} <span className="font-medium text-foreground">{req.currentDepartmentName}</span></span>
+                          : <span>{t('dashboard.processing')}</span>
                         }
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3 w-3 shrink-0" />
-                        Waiting <span className="font-medium text-foreground">{req.waitingHours}h</span>
+                        {t('requests.waitingHours')} <span className="font-medium text-foreground ms-1">{req.waitingHours}h</span>
                         {req.remainingSlaHours !== undefined && req.remainingSlaHours !== null && req.remainingSlaHours < 48 && (
-                          <span className="text-amber-600 font-semibold">· SLA: {req.remainingSlaHours}h left</span>
+                          <span className="text-amber-600 font-semibold">
+                            · {t('dashboard.slaLeft').replace('{h}', String(req.remainingSlaHours))}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="flex items-center gap-1">
                           <PriorityDot priority={req.priority} />
-                          <span className="capitalize">{t(`priority.${req.priority}`) || req.priority} priority</span>
+                          <span>{t(`priority.${req.priority}`) || req.priority}</span>
                         </span>
                         {req.delayRisk && req.delayRisk !== "low" && (
                           <span className={`font-semibold ${
                             req.delayRisk === "critical" ? "text-red-600" :
                             req.delayRisk === "high" ? "text-orange-600" : "text-amber-600"
                           }`}>
-                            {req.delayRisk} risk
+                            {t(`risk.${req.delayRisk}`)}
                           </span>
                         )}
                       </div>
@@ -652,7 +660,9 @@ export default function Dashboard() {
                     {req.progressPercent !== undefined && (
                       <div className="mb-3">
                         <Progress value={req.progressPercent} className="h-1.5" />
-                        <span className="text-[10px] text-muted-foreground mt-1 block">{req.progressPercent}% complete</span>
+                        <span className="text-[10px] text-muted-foreground mt-1 block">
+                          {req.progressPercent}% {t('dashboard.complete')}
+                        </span>
                       </div>
                     )}
 
@@ -664,7 +674,7 @@ export default function Dashboard() {
                         className="flex-1 h-7 text-xs"
                         onClick={(e) => { e.stopPropagation(); setLocation(`/requests/${req.id}`); }}
                       >
-                        View Details
+                        {t('dashboard.viewDetails')}
                       </Button>
                       {(req.status === "active" || req.status === "pending") && (
                         <Button
@@ -680,7 +690,7 @@ export default function Dashboard() {
                           disabled={advanceMut.isPending}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
-                          Advance
+                          {t('requests.advance')}
                         </Button>
                       )}
                     </div>

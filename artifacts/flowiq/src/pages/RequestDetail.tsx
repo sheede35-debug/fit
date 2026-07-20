@@ -119,7 +119,7 @@ export default function RequestDetail() {
           </Button>
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="font-mono text-sm text-muted-foreground">REQ-{req.id.toString().padStart(4, '0')}</span>
-            <Badge variant="outline">{req.workflowName || 'Custom Request'}</Badge>
+            <Badge variant="outline">{req.workflowName || t('requests.customRequest')}</Badge>
             {getStatusBadge(req.status)}
           </div>
           <h1 className="text-2xl font-bold tracking-tight mt-2">{req.title}</h1>
