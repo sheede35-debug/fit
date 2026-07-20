@@ -7,11 +7,13 @@ import {
   useRejectRequest,
   useCreateComment,
   useGetRequestJourney,
+  getGetRequestQueryKey,
   getPredictRequestDelayQueryKey,
   getGetRequestJourneyQueryKey,
+  getListCommentsQueryKey,
 } from "@workspace/api-client-react";
 import { queryClient } from "@/lib/queryClient";
-import { getGetRequestQueryKey } from "@workspace/api-client-react";
+import { toast } from "@/components/ui/toaster";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +25,7 @@ import {
   CheckCircle2, Clock, XCircle, ArrowRight, BrainCircuit,
   Paperclip, Send, AlertTriangle, FileText, Activity,
   ChevronLeft, Route, Sparkles, Building2, User as UserIcon,
-  Circle, CircleDot,
+  Circle, CircleDot, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -37,6 +39,11 @@ export default function RequestDetail() {
   const [commentText, setCommentText] = useState("");
   const [advanceComment, setAdvanceComment] = useState("");
   const [rejectReason, setRejectReason] = useState("");
+
+  // Optimistic comments shown instantly before the server round-trip
+  const [optimisticComments, setOptimisticComments] = useState<
+    Array<{ _optimisticId: string; content: string; authorName: string; createdAt: string }>
+  >([]);
 
   const { data: req, isLoading } = useGetRequest(id, {
     query: { enabled: !!id, queryKey: getGetRequestQueryKey(id) }
@@ -75,13 +82,40 @@ export default function RequestDetail() {
   };
 
   const handleComment = () => {
-    if (!commentText.trim()) return;
-    commentMut.mutate({ data: { content: commentText, requestId: id } as any }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
-        setCommentText("");
+    const content = commentText.trim();
+    if (!content || commentMut.isPending) return;
+
+    // Show comment instantly before the server responds
+    const optimisticId = `opt-${Date.now()}`;
+    setOptimisticComments(prev => [
+      ...prev,
+      { _optimisticId: optimisticId, content, authorName: "You", createdAt: new Date().toISOString() },
+    ]);
+    setCommentText("");
+
+    // ✅ Correct shape: requestId as path param, content in body
+    commentMut.mutate(
+      { requestId: id, data: { content } },
+      {
+        onSuccess: () => {
+          // Remove the optimistic entry — server data will replace it via invalidation
+          setOptimisticComments(prev => prev.filter(c => c._optimisticId !== optimisticId));
+          queryClient.invalidateQueries({ queryKey: getGetRequestQueryKey(id) });
+          queryClient.invalidateQueries({ queryKey: getListCommentsQueryKey(id) });
+          toast({ title: "Comment posted", description: "Your comment has been saved." });
+        },
+        onError: (err: any) => {
+          // Roll back the optimistic entry and restore the input text
+          setOptimisticComments(prev => prev.filter(c => c._optimisticId !== optimisticId));
+          setCommentText(content);
+          toast({
+            title: "Failed to post comment",
+            description: err?.message ?? "Please try again.",
+            variant: "destructive",
+          });
+        },
       }
-    });
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -371,38 +405,82 @@ export default function RequestDetail() {
           {/* Comments */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t('requests.comments')}</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                {t('requests.comments')}
+                {((req.comments?.length ?? 0) + optimisticComments.length) > 0 && (
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {(req.comments?.length ?? 0) + optimisticComments.length}
+                  </Badge>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {req.comments?.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t('requests.noComments')}</p>
-              ) : (
-                <div className="space-y-3">
-                  {req.comments?.map((comment: any) => (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
-                          {comment.authorName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">{comment.authorName}</span>
-                          <span className="text-xs text-muted-foreground">{format(new Date(comment.createdAt), 'MMM d, h:mm a')}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">{comment.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Merge server comments with optimistic ones, sorted by time */}
+              {(() => {
+                const serverComments: any[] = req.comments ?? [];
+                // Only show optimistic entries that aren't already in the server list
+                const pendingOptimistic = optimisticComments.filter(
+                  oc => !serverComments.some(sc => sc.content === oc.content)
+                );
+                const allComments = [...serverComments, ...pendingOptimistic].sort(
+                  (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                );
 
+                if (allComments.length === 0) {
+                  return <p className="text-sm text-muted-foreground">{t('requests.noComments')}</p>;
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {allComments.map((comment: any, i: number) => {
+                      const isOptimistic = !!comment._optimisticId;
+                      return (
+                        <div
+                          key={comment._optimisticId ?? comment.id ?? i}
+                          className={`flex gap-3 transition-opacity duration-200 ${isOptimistic ? 'opacity-60' : 'opacity-100'}`}
+                        >
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                              {comment.authorName?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold">{comment.authorName}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(comment.createdAt), 'MMM d, h:mm a')}
+                              </span>
+                              {isOptimistic && (
+                                <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                  sending…
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
+                              {comment.content}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Input row */}
               <div className="flex gap-2 pt-2 border-t">
                 <Input
                   placeholder={t('requests.writeComment')}
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleComment()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleComment();
+                    }
+                  }}
+                  disabled={commentMut.isPending}
                   className="flex-1"
                 />
                 <Button
@@ -410,8 +488,12 @@ export default function RequestDetail() {
                   onClick={handleComment}
                   disabled={!commentText.trim() || commentMut.isPending}
                   className="shrink-0"
+                  title="Send comment"
                 >
-                  <Send className="h-4 w-4" />
+                  {commentMut.isPending
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Send className="h-4 w-4" />
+                  }
                 </Button>
               </div>
             </CardContent>
