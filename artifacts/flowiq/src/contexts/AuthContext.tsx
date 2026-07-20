@@ -19,41 +19,33 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "").replace(/\/[^/]+$/, "");
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>({
-    id: 1,
-    name: "Demo User",
-    email: "demo@flowiq.com",
-    role: "Manager",
-    departmentId: null,
-  });
-
-  const [loading, setLoading] = useState(false);
-
-
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ email, password }),
+  export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<AuthUser | null>({
+      id: 1,
+      name: "Demo User",
+      email: "demo@flowiq.com",
+      role: "admin",
+      departmentId: null,
     });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error((data as any).error || "Login failed");
-    }
-    const data: AuthUser = await res.json();
-    setUser(data);
-  }, []);
 
-  const logout = useCallback(async () => {
-    await fetch(`${API_BASE}/api/auth/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    setUser(null);
-  }, []);
+    const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+      setLoading(false);
+    }, []);
+    const login = useCallback(async () => {
+      setUser({
+        id: 1,
+        name: "Demo User",
+        email: "demo@flowiq.com",
+        role: "admin",
+        departmentId: null,
+      });
+    }, []);
+    
+    const logout = useCallback(async () => {
+      setUser(null);
+    }, []);
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
