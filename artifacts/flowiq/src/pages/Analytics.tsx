@@ -75,7 +75,7 @@ export default function Analytics() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
             <BarChart3 className="h-6 w-6" />
@@ -318,8 +318,8 @@ export default function Analytics() {
                         <TableHead className="text-center">{t('analytics.completed')}</TableHead>
                         <TableHead className="text-center">{t('analytics.avgHours')}</TableHead>
                         <TableHead className="text-center">{t('analytics.slaRate')}</TableHead>
-                        <TableHead className="text-center">{t('analytics.score')}</TableHead>
-                        <TableHead className="text-center">{t('analytics.trend')}</TableHead>
+                        <TableHead className="hidden sm:table-cell text-center">{t('analytics.score')}</TableHead>
+                        <TableHead className="hidden sm:table-cell text-center">{t('analytics.trend')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -333,12 +333,12 @@ export default function Analytics() {
                               {dept.slaCompliance}%
                             </span>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="hidden sm:table-cell text-center">
                             <span className={`font-bold ${dept.score >= 75 ? 'text-emerald-600' : dept.score >= 60 ? 'text-amber-600' : 'text-red-600'}`}>
                               {dept.score}
                             </span>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="hidden sm:table-cell text-center">
                             <span className="flex items-center justify-center">{getTrendIcon(dept.trend)}</span>
                           </TableCell>
                         </TableRow>

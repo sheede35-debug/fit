@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  X,
   Moon,
   Sun,
   Languages,
@@ -41,31 +42,45 @@ export function Sidebar() {
   const { t, isRTL } = useLanguage()
 
   const navItems = [
-    { href: "/dashboard",  labelKey: "nav.dashboard",     icon: LayoutDashboard },
-    { href: "/requests",   labelKey: "nav.requests",      icon: FileText },
-    { href: "/workflows",  labelKey: "nav.workflows",     icon: GitBranch },
-    { href: "/analytics",  labelKey: "nav.analytics",     icon: BarChart3 },
-    { href: "/ai",         labelKey: "nav.aiHub",         icon: BrainCircuit, highlight: true },
-    { href: "/reports",    labelKey: "nav.reports",       icon: FileBarChart2 },
+    { href: "/dashboard",     labelKey: "nav.dashboard",     icon: LayoutDashboard },
+    { href: "/requests",      labelKey: "nav.requests",      icon: FileText },
+    { href: "/workflows",     labelKey: "nav.workflows",     icon: GitBranch },
+    { href: "/analytics",     labelKey: "nav.analytics",     icon: BarChart3 },
+    { href: "/ai",            labelKey: "nav.aiHub",         icon: BrainCircuit, highlight: true },
+    { href: "/reports",       labelKey: "nav.reports",       icon: FileBarChart2 },
     { href: "/notifications", labelKey: "nav.notifications", icon: Bell },
-    { href: "/admin",      labelKey: "nav.admin",         icon: Settings },
+    { href: "/admin",         labelKey: "nav.admin",         icon: Settings },
   ]
 
   return (
     <aside
-      className={`fixed top-0 h-dvh z-50 flex flex-col border-e bg-sidebar text-sidebar-foreground transition-all duration-300 ${
-        sidebarOpen ? "w-64" : "w-16"
-      } start-0`}
+      className={`fixed top-0 h-dvh z-50 flex flex-col border-e bg-sidebar text-sidebar-foreground transition-all duration-300 start-0 ${
+        sidebarOpen
+          ? "translate-x-0 w-64"
+          : "-translate-x-full md:translate-x-0 w-64 md:w-16"
+      }`}
     >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border shrink-0">
         {sidebarOpen ? (
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
-              <GitBranch className="h-4.5 w-4.5" />
-            </div>
-            <span className="font-bold text-lg tracking-tight">FlowIQ</span>
-          </Link>
+          <>
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shrink-0">
+                <GitBranch className="h-4.5 w-4.5" />
+              </div>
+              <span className="font-bold text-lg tracking-tight">FlowIQ</span>
+            </Link>
+            {/* Close button on mobile only */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden h-8 w-8 text-muted-foreground"
+              aria-label="Close menu"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </>
         ) : (
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <GitBranch className="h-4.5 w-4.5" />
@@ -82,6 +97,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => {
+                  // Close sidebar on mobile after navigating
+                  if (window.innerWidth < 768) setSidebarOpen(false)
+                }}
                 className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-primary/10 text-primary"
@@ -104,8 +123,8 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Collapse button */}
-      <div className="border-t border-sidebar-border p-3 flex justify-end shrink-0">
+      {/* Collapse button — desktop only */}
+      <div className="border-t border-sidebar-border p-3 hidden md:flex justify-end shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -129,21 +148,22 @@ export function Header() {
   const { theme, setTheme } = useTheme()
   const { lang, setLang, t } = useLanguage()
   const { user, logout } = useAuth()
-  const sidebarW = sidebarOpen ? "start-64" : "start-16"
 
   const initials = user ? getInitials(user.name) : "?"
 
   return (
     <header
-      className={`fixed top-0 end-0 ${sidebarW} z-40 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm transition-all duration-300`}
+      className={`fixed top-0 end-0 z-40 flex h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur-sm transition-all duration-300 start-0 ${
+        sidebarOpen ? "md:start-64" : "md:start-16"
+      }`}
     >
-      {/* Left: mobile menu toggle */}
+      {/* Left: hamburger */}
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          className="md:hidden h-8 w-8"
+          className="h-8 w-8"
           aria-label="Toggle menu"
         >
           <Menu className="h-5 w-5" />
@@ -161,7 +181,7 @@ export function Header() {
           aria-label="Switch language"
         >
           <Languages className="h-4 w-4" />
-          <span>{lang === 'en' ? 'عربي' : 'EN'}</span>
+          <span className="hidden sm:inline">{lang === 'en' ? 'عربي' : 'EN'}</span>
         </Button>
 
         {/* Theme toggle */}
@@ -177,7 +197,7 @@ export function Header() {
         </Button>
 
         {/* User + logout */}
-        <div className="flex items-center gap-2 ms-1 ps-3 border-s border-border">
+        <div className="flex items-center gap-2 ms-1 ps-2 sm:ps-3 border-s border-border">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-sm font-semibold leading-tight">{user?.name ?? ""}</span>
             <span className="text-xs text-muted-foreground leading-tight">{user?.email ?? ""}</span>
@@ -205,15 +225,24 @@ export function Header() {
 
 // ─── AppLayout ────────────────────────────────────────────────────────────────
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { sidebarOpen } = useAppStore()
+  const { sidebarOpen, setSidebarOpen } = useAppStore()
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
+      {/* Mobile backdrop — closes sidebar when tapping outside */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <div className="flex flex-1 min-h-0">
         <Sidebar />
         <div
-          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-            sidebarOpen ? "ms-64" : "ms-16"
+          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ms-0 ${
+            sidebarOpen ? "md:ms-64" : "md:ms-16"
           }`}
         >
           <Header />

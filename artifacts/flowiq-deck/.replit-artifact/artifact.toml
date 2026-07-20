@@ -1,0 +1,27 @@
+kind = "slides"
+previewPath = "/flowiq-deck/"
+title = "FlowIQ Pitch Deck"
+version = "1.0.0"
+id = "artifacts/flowiq-deck"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/flowiq-deck/" ]
+localPort = 18974
+
+[services.development]
+run = "pnpm --filter @workspace/flowiq-deck run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/flowiq-deck", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/flowiq-deck/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18974"
+BASE_PATH = "/flowiq-deck/"

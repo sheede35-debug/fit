@@ -232,7 +232,7 @@ export default function RequestDetail() {
               {/* Actions */}
               {req.status !== 'completed' && req.status !== 'rejected' && (
                 <div className="pt-2 border-t space-y-3">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       placeholder={t('requests.advanceNote')}
                       value={advanceComment}
@@ -248,7 +248,7 @@ export default function RequestDetail() {
                       {t('requests.advance')}
                     </Button>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                       placeholder={t('requests.rejectionReason')}
                       value={rejectReason}

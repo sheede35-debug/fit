@@ -135,7 +135,7 @@ export default function Requests() {
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="ps-4">{t('requests.requestTitle')}</TableHead>
-                    <TableHead>{t('requests.workflow')}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{t('requests.workflow')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('common.status')}</TableHead>
                     <TableHead className="hidden md:table-cell">{t('common.priority')}</TableHead>
                     <TableHead className="hidden lg:table-cell">{t('requests.currentDept')}</TableHead>
@@ -155,7 +155,7 @@ export default function Requests() {
                           </span>
                         </Link>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                         <span className="line-clamp-1">{req.workflowName || '—'}</span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{getStatusBadge(req.status)}</TableCell>
